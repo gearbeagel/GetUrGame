@@ -23,10 +23,14 @@ class Dev(Configuration):
     BASE_DIR = Path(__file__).resolve().parent.parent
 
     SECRET_KEY = os.getenv('SECRET_KEY')
+    STEAM_API_KEY = os.getenv('STEAM_API_KEY')
 
     DEBUG = True
 
     ALLOWED_HOSTS = ["*"]
+
+    LOGIN_REDIRECT_URL = '/api/user/games/'
+    LOGOUT_REDIRECT_URL = '/'
 
     INSTALLED_APPS = [
         'django.contrib.admin',
@@ -35,7 +39,13 @@ class Dev(Configuration):
         'django.contrib.sessions',
         'django.contrib.messages',
         'django.contrib.staticfiles',
+        'django.contrib.sites',
         'rest_framework',
+        'allauth',
+        'allauth.account',
+        'allauth.socialaccount',
+        'allauth.socialaccount.providers.steam',
+        'allauth.socialaccount.providers.openid',
         'main'
     ]
 
@@ -47,6 +57,7 @@ class Dev(Configuration):
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
+        'allauth.account.middleware.AccountMiddleware'
     ]
 
     ROOT_URLCONF = 'core.urls'
@@ -68,6 +79,20 @@ class Dev(Configuration):
     ]
 
     AUTH_USER_MODEL = 'main.CustomUser'
+
+    AUTHENTICATION_BACKENDS = [
+        'allauth.account.auth_backends.AuthenticationBackend',
+    ]
+
+    SOCIALACCOUNT_PROVIDERS = {
+        'steam': {
+            'APP': {
+                'client_id': '',
+                'secret': '',
+            }
+        }
+    }
+
     WSGI_APPLICATION = 'core.wsgi.application'
 
     DATABASES = {
