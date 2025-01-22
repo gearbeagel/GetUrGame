@@ -1,18 +1,21 @@
 import logging
 
-from django.conf import settings
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+import kagglehub
+from django.contrib.auth import login, logout
 from django.urls import reverse
-from django.utils.decorators import method_decorator
-from django.shortcuts import redirect
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from urllib.parse import urlencode
 import requests
+from data.model import get_keras_model, preprocess_data, get_tfidf_and_scaler
+import numpy as np
+import pandas as pd
+from django.conf import settings
 
 from .models import CustomUser
+from .serializers import RecommendationSerializer
 
 STEAM_OPENID_URL = "https://steamcommunity.com/openid/login"
 
@@ -27,6 +30,7 @@ class MainView(APIView):
             "steam-login": request.build_absolute_uri(reverse('steam-login')),
             "steam-logout": request.build_absolute_uri(reverse('steam-logout')),
             "user-games": request.build_absolute_uri(reverse('user-games')),
+            "get-recs": request.build_absolute_uri(reverse('get-recs')),
         }
         return Response(links)
 
@@ -103,6 +107,7 @@ class SteamCallbackView(APIView):
     """
     Handles the Steam OpenID callback.
     """
+
     def get(self, request):
         openid_params = request.GET
         logger.debug("Received OpenID params: %s", openid_params)
@@ -176,3 +181,68 @@ class UserGamesView(APIView):
             return Response({"games": game_details})
 
         return Response({"error": "Unable to retrieve games."}, status=500)
+
+
+def get_user_games_data(steam_id):
+    response = requests.get(
+        "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/",
+        params={
+            'key': settings.STEAM_API_KEY,
+            'steamid': steam_id,
+            'include_appinfo': True,
+            'format': 'json',
+        }
+    )
+    if response.status_code == 200:
+        user_games_data = response.json().get('response', {}).get('games', [])
+        return [{'name': game['name'], 'appid': game['appid']} for game in user_games_data]
+    return []
+
+
+class RecommendGames(APIView):
+    """
+    View for getting recommendations.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response({"message": "Get your own recommendations!"})
+
+    def post(self, request):
+        steam_id = request.user.steam_id
+        user_games = get_user_games_data(steam_id)
+
+        if not user_games:
+            return Response({'error': 'Unable to retrieve games for recommendations'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        model = get_keras_model()
+        path = kagglehub.dataset_download('artermiloff/steam-games-dataset')
+        df = pd.read_csv(path + '/games_may2024_cleaned.csv')
+        df = preprocess_data(df)
+
+        tfidf, scaler = get_tfidf_and_scaler(df)
+        owned_game_names = [game['name'] for game in user_games]
+        filtered_df = df[~df['name'].isin(owned_game_names)]
+
+        combined_features_tfidf = tfidf.transform(filtered_df['combined_features'])
+        additional_features = filtered_df[['review_sentiment', 'estimated_owners_processed']].to_numpy()
+
+        game_features = np.hstack([combined_features_tfidf.toarray(), additional_features])
+        game_features_scaled = scaler.transform(game_features)
+
+        predicted_scores = model.predict(game_features_scaled, verbose=0)
+
+        filtered_df['predicted_score'] = predicted_scores
+
+        recommendations = (
+            filtered_df[['name', 'predicted_score', 'tags', 'genres', 'AppID', 'reviews', 'short_description',
+                         'header_image']]
+            .sort_values('predicted_score', ascending=False)
+            .head(200)
+            .sample(5)
+            .to_dict(orient='records')
+        )
+
+        serializer = RecommendationSerializer(recommendations, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
