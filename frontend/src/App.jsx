@@ -1,7 +1,12 @@
 import "./App.css";
+import Homepage from './components/Homepage'
 
 function App() {
-  return <>Hello World!</>;
+  return (
+    <>
+    <Homepage/>
+    </>
+  );
 }
 
 export default App;
