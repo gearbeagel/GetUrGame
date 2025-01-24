@@ -353,6 +353,22 @@ search = ["dj-search-url"]
 testing = ["dj-database-url", "dj-email-url", "dj-search-url", "django-cache-url (>=1.0.0)"]
 
 [[package]]
+name = "django-cors-headers"
+version = "4.6.0"
+description = "django-cors-headers is a Django application for handling the server headers required for Cross-Origin Resource Sharing (CORS)."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "django_cors_headers-4.6.0-py3-none-any.whl", hash = "sha256:8edbc0497e611c24d5150e0055d3b178c6534b8ed826fb6f53b21c63f5d48ba3"},
+    {file = "django_cors_headers-4.6.0.tar.gz", hash = "sha256:14d76b4b4c8d39375baeddd89e4f08899051eeaf177cb02a29bd6eae8cf63aa8"},
+]
+
+[package.dependencies]
+asgiref = ">=3.6"
+django = ">=4.2"
+
+[[package]]
 name = "django-rest-framework"
 version = "0.1.0"
 description = "alias."
@@ -2191,4 +2207,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<4.0"
-content-hash = "3a08dcbf44ea1e3d519f74402dbac067502ea581d4eba3a181fcb916ea81fa2f"
+content-hash = "6e6fea27f7093929230cc8f526b06a36522fa56dfa3c2aa9a995ae6f70a197c4"

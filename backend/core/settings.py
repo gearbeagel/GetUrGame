@@ -40,6 +40,7 @@ class Dev(Configuration):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'django.contrib.sites',
+        'corsheaders',
         'rest_framework',
         'allauth',
         'allauth.account',
@@ -50,6 +51,7 @@ class Dev(Configuration):
     ]
 
     MIDDLEWARE = [
+        'corsheaders.middleware.CorsMiddleware',
         'django.middleware.security.SecurityMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.middleware.common.CommonMiddleware',
@@ -59,6 +61,8 @@ class Dev(Configuration):
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
         'allauth.account.middleware.AccountMiddleware'
     ]
+
+    CORS_ORIGIN_ALLOW_ALL = True
 
     ROOT_URLCONF = 'core.urls'
 
