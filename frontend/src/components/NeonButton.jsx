@@ -2,7 +2,7 @@ import React from "react"
 
 const NeonButton = ({ children, color, onClick }) => {
   const baseClasses =
-    "px-6 py-3 rounded-full font-bold text-lg transition-all duration-300 ease-in-out flex items-center justify-center"
+    "px-6 py-3 rounded-full font-bold text-lg transition-all duration-300 ease-in-out flex items-center justify-center cursor-pointer"
   const colorClasses = {
     blue: "bg-blue-500 text-white hover:bg-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.5)] hover:shadow-[0_0_25px_rgba(59,130,246,0.8)]",
     green:

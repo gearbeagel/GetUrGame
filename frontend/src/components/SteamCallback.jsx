@@ -1,41 +1,48 @@
-import React, { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
-const SteamCallback = ({ setIsAuthenticated }) => {
-  const location = useLocation();
+const SteamCallback = ({ setIsAuthenticated, setUsername }) => {
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      const urlParams = new URLSearchParams(location.search);
-
+    const handleSteamCallback = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/steam/callback/?${urlParams.toString()}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+        const urlParams = new URLSearchParams(window.location.search);
+        const response = await axios.get(
+          `http://127.0.0.1:8000/api/steam/callback/?${urlParams.toString()}`,
+          {
+            withCredentials: true,
+          }
+        );
+        console.log(response)
 
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Login successful:", data);
-          setIsAuthenticated(true); // Update authentication state
-          navigate('/');  // Redirect to the homepage
+        if (response.status === 200 && response.data.steam_id && response.data.username) {
+          setIsAuthenticated(true);
+          setUsername(response.data.username);
+          navigate("/");
         } else {
-          console.error("Login failed:", response.statusText);
-          navigate('/');  // Redirect to the homepage on error
+          setLoading(false);
         }
       } catch (error) {
         console.error("Error during Steam callback:", error);
-        navigate('/');  // Redirect to the homepage on error
+        setLoading(false);
       }
     };
 
-    handleCallback();
-  }, [location, navigate, setIsAuthenticated]);
+    handleSteamCallback();
+  }, [setIsAuthenticated, setUsername, navigate]);
 
-  return <div>Processing Steam login...</div>;
+  return (
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
+      {loading ? (
+        <p>Loading...</p>
+      ) : (
+        <p>Authentication failed or completed successfully. You will be redirected.</p>
+      )}
+    </div>
+  );
 };
 
 export default SteamCallback;

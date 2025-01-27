@@ -1,62 +1,54 @@
 import React, { useState, useEffect } from "react";
-import "./App.css";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import axios from "axios";
 import Homepage from "./components/Homepage";
 import SteamCallback from "./components/SteamCallback";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState(null);
 
-  const checkUserAuth = async () => {
-    try {
-      const response = await fetch("/api/misc/check-auth/", {
-        method: "GET",
-        credentials: "include",
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setIsAuthenticated(data.isAuthenticated);
-        setUsername(data.username);
-        console.log(username)
-        return data.isAuthenticated;
-      }
-    } catch (error) {
-      console.error("Error checking auth status:", error);
-    }
-    return false;
-  };
-
   useEffect(() => {
-    checkUserAuth();
+    const checkAuthFromBackend = async () => {
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/misc/check-auth/", {
+          withCredentials: true,
+        });
+
+        if (response.data.isAuthenticated) {
+          setIsAuthenticated(response.data.isAuthenticated);
+          setUsername(response.data.username);
+        } else {
+          setIsAuthenticated(false);
+          setUsername(null);
+        }
+      } catch (error) {
+        console.error("Error checking auth status:", error);
+      }
+    };
+
+    checkAuthFromBackend();
   }, []);
 
   return (
-    <>
-      <Router>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <Homepage
-                isAuthenticated={isAuthenticated}
-                setIsAuthenticated={setIsAuthenticated}
-                username={username}
-              />
-            }
-          />
-          <Route
-            path="/steam/callback"
-            element={
-              <SteamCallback
-                setIsAuthenticated={setIsAuthenticated}
-                setUsername={setUsername}
-              />
-            }
-          />
-        </Routes>
-      </Router>
-    </>
+    <Router>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Homepage
+              isAuthenticated={isAuthenticated}
+              setIsAuthenticated={setIsAuthenticated}
+              username={username}
+            />
+          }
+        />
+        <Route
+          path="/steam/callback"
+          element={<SteamCallback setIsAuthenticated={setIsAuthenticated} setUsername={setUsername} />}
+        />
+      </Routes>
+    </Router>
   );
 }
 
