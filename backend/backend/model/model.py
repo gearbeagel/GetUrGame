@@ -22,10 +22,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 def ensure_data_directory():
-    """Ensure that the data directory exists."""
-    if not os.path.exists('./backend/data'):
-        os.makedirs('./data')
-        logging.info("Created directory: ./data")
+    """Ensure that the model directory exists."""
+    if not os.path.exists('./backend/model'):
+        os.makedirs('./model')
+        logging.info("Created directory: ./model")
 
 
 def analyze_review_sentiment(review_text):
@@ -64,7 +64,7 @@ def preprocess_data(df):
     return df
 
 
-def get_tfidf_and_scaler(df, tfidf_path='./backend/data/tfidf.pkl', scaler_path='./backend/data/scaler.pkl'):
+def get_tfidf_and_scaler(df, tfidf_path='./backend/model/tfidf.pkl', scaler_path='./backend/model/scaler.pkl'):
     if os.path.exists(tfidf_path) and os.path.exists(scaler_path):
         logging.info("TF-IDF and Scaler already exist. Loading them...")
         tfidf = joblib.load(tfidf_path)
@@ -110,7 +110,7 @@ def build_keras_model(input_dim):
     return model
 
 
-def train_and_save_model(df, model_save_path='./backend/data/model.keras'):
+def train_and_save_model(df, model_save_path='./backend/model/model.keras'):
     """Train the model and save it to disk."""
     tfidf, scaler = get_tfidf_and_scaler(df)
     X, y = prepare_data(df, tfidf, scaler)
@@ -134,16 +134,16 @@ def train_and_save_model(df, model_save_path='./backend/data/model.keras'):
     plt.plot(history.history['val_loss'], label='Validation Loss')
     plt.legend()
     plt.title('Training History')
-    plt.savefig('./backend/data/training_history.png')
-    logging.info("Training history saved as ./data/training_history.png")
+    plt.savefig('./backend/model/training_history.png')
+    logging.info("Training history saved as ./model/training_history.png")
 
 
-def get_keras_model(model_path='./backend/data/model.keras'):
+def get_keras_model(model_path='./backend/model/model.keras'):
     """Load the saved Keras model."""
     return keras.saving.load_model(model_path)
 
 
-def load_tfidf_and_scaler(tfidf_path='./data/tfidf.pkl', scaler_path='./data/scaler.pkl'):
+def load_tfidf_and_scaler(tfidf_path='./model/tfidf.pkl', scaler_path='./model/scaler.pkl'):
     """Load saved TF-IDF and scaler."""
     tfidf = joblib.load(tfidf_path)
     scaler = joblib.load(scaler_path)
@@ -158,7 +158,7 @@ def main():
         path = kagglehub.dataset_download('artermiloff/steam-games-dataset')
         df = pd.read_csv(path + '/games_may2024_cleaned.csv')
 
-        logging.info("Preprocessing data...")
+        logging.info("Preprocessing model...")
         df = preprocess_data(df)
 
         logging.info("Training and saving model...")
