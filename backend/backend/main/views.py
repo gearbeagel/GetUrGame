@@ -1,25 +1,28 @@
 import logging
+from urllib.parse import urlencode
 
 import kagglehub
-from django.contrib.auth import login, logout
-from django.http import JsonResponse
-from django.shortcuts import redirect
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from urllib.parse import urlencode
-import requests
-from data.model import get_keras_model, preprocess_data, get_tfidf_and_scaler
 import numpy as np
 import pandas as pd
+import requests
 from django.conf import settings
+from django.contrib.auth import login, logout
+from django.http import JsonResponse
+from django.urls import reverse
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from model.model import get_keras_model, preprocess_data, get_tfidf_and_scaler
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import CustomUser
 from .serializers import RecommendationSerializer
 
 STEAM_OPENID_URL = "https://steamcommunity.com/openid/login"
+
+logger = logging.getLogger(__name__)
 
 
 class MainView(APIView):
@@ -46,22 +49,27 @@ class SteamLoginView(APIView):
         try:
             is_frontend = request.GET.get('source') == 'frontend'
             return_to_url = (
-                "http://localhost:5173/steam/callback" if is_frontend
-                else "http://localhost:8000/api/steam/callback"
+                f"{settings.FRONTEND_URL}/steam/callback" if is_frontend
+                else f"{settings.BACKEND_URL}/api/steam/callback"
             )
 
             params = {
                 'openid.ns': 'http://specs.openid.net/auth/2.0',
                 'openid.mode': 'checkid_setup',
-                'openid.return_to': "http://localhost:5173/steam/callback",
-                'openid.realm': "http://localhost:5173/steam/callback",
+                'openid.return_to': return_to_url,
+                'openid.realm': return_to_url,
                 'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
                 'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select'
             }
+
             steam_url = f"{STEAM_OPENID_URL}?{urlencode(params)}"
-            return JsonResponse({"redirect_url": steam_url})
+            logger.info("Redirecting to Steam for authentication: %s", steam_url)
+
+            return Response({"redirect_url": steam_url})
+
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=500)
+            logger.error(f"Error in SteamLoginView: {str(e)}")
+            return Response({"error": "An error occurred during login."}, status=500)
 
 
 class SteamLogoutView(APIView):
@@ -70,56 +78,53 @@ class SteamLogoutView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
     def post(self, request):
-        logout(request)
-        return Response({"message": "Logged out successfully."})
+        try:
+            logout(request)
+            logger.info("User logged out successfully.")
+            return Response({"message": "Logged out successfully."})
 
-
-logger = logging.getLogger(__name__)
+        except Exception as e:
+            logger.error(f"Logout incomplete: {str(e)}")
+            return Response({"message": "Logout incomplete."}, status=500)
 
 
 class SteamCallbackView(APIView):
     """
-    Handles the Steam OpenID callback.
+    Handles the Steam OpenID callback and processes the user authentication.
     """
 
     def get(self, request):
         try:
             openid_params = request.GET
-            logger.debug("Received OpenID params: %s", openid_params)
-
-            if not self.validate_openid_response(openid_params):
-                logger.error("OpenID response validation failed.")
-                return Response({"error": "Invalid OpenID response."}, status=400)
+            logger.info("Received OpenID params: %s", openid_params)
 
             steam_id = openid_params['openid.identity'].split('/')[-1]
             username = get_steam_username(steam_id)
-            logger.info("Steam user authenticated: %s (%s)", username, steam_id)
 
             user, created = CustomUser.objects.get_or_create(steam_id=steam_id)
-            if created and username:
+            if created:
                 logger.debug("Created new user: %s", username)
                 user.username = username
                 user.set_unusable_password()
                 user.save()
 
             login(request, user)
-            return Response({"message": "Logged in successfully.", "steam_id": steam_id, "username": username})
+            logger.info("User logged in successfully: %s", username)
+
+            session_key = request.session.session_key
+            print(f"Session key: {session_key}")
+            print(f"User is authenticated: {request.user.is_authenticated}")
+
+            return Response({"message": "Logged user in successfully", "steam_id": steam_id, "username": username})
 
         except Exception as e:
             logger.error("Error during Steam callback: %s", str(e))
             return Response({"error": f"An error occurred: {str(e)}"}, status=500)
-
-    def validate_openid_response(self, params):
-        try:
-            validation_url = "https://steamcommunity.com/openid/login"
-            validation_params = params.copy()
-            validation_params['openid.mode'] = 'check_authentication'
-            response = requests.post(validation_url, data=validation_params)
-            return 'is_valid:true' in response.text
-        except Exception as e:
-            logger.error("Validation error: %s", e)
-            return False
 
 
 def get_steam_username(steam_id):
@@ -146,7 +151,9 @@ class CheckAuthView(APIView):
     def get(self, request):
         if request.user.is_authenticated:
             username = get_steam_username(request.user.steam_id)
+            logger.info("User is authenticated: %s", username)
             return JsonResponse({"isAuthenticated": True, "username": username})
+        logger.info("User is not authenticated")
         return JsonResponse({"isAuthenticated": False, "username": None})
 
 
@@ -178,7 +185,7 @@ class UserGamesView(APIView):
                     params={"appids": appid}
                 )
                 if store_response.status_code == 200:
-                    store_data = store_response.json().get(str(appid), {}).get("data", {})
+                    store_data = store_response.json().get(str(appid), {}).get("model", {})
                     short_description = store_data.get('short_description', 'No description available')
                     cover_url = store_data.get('header_image',
                                                f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/header.jpg")

@@ -1,11 +1,11 @@
 runserver:
-	poetry run python manage.py runserver
+	poetry run python backend/manage.py runserver
 
 app:
-	poetry run python manage.py startapp $(name)
+	poetry run python backend/manage.py startapp $(name)
 
 migrate:
-	poetry run python manage.py migrate
+	poetry run python backend/manage.py migrate
 
 makemigrations:
-	poetry run python manage.py makemigrations
+	poetry run python backend/manage.py makemigrations

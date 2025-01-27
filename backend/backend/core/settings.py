@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+import sys
 from pathlib import Path
 
 from configurations import Configuration
@@ -22,6 +23,9 @@ load_dotenv()
 class Dev(Configuration):
     BASE_DIR = Path(__file__).resolve().parent.parent
 
+    FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+    BACKEND_URL = os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')
+
     SECRET_KEY = os.getenv('SECRET_KEY')
     STEAM_API_KEY = os.getenv('STEAM_API_KEY')
 
@@ -32,7 +36,14 @@ class Dev(Configuration):
     LOGIN_REDIRECT_URL = '/api/user/games/'
     LOGOUT_REDIRECT_URL = '/'
 
+    CSRF_COOKIE_NAME = "csrftoken"
+    CSRF_COOKIE_HTTPONLY = False
+
+    SESSION_COOKIE_SAMESITE = "None"
+    SESSION_COOKIE_SECURE = True
+
     INSTALLED_APPS = [
+        'corsheaders',
         'django.contrib.admin',
         'django.contrib.auth',
         'django.contrib.contenttypes',
@@ -40,7 +51,6 @@ class Dev(Configuration):
         'django.contrib.messages',
         'django.contrib.staticfiles',
         'django.contrib.sites',
-        'corsheaders',
         'rest_framework',
         'allauth',
         'allauth.account',
@@ -61,10 +71,24 @@ class Dev(Configuration):
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
         'allauth.account.middleware.AccountMiddleware'
     ]
+    CORS_ALLOW_CREDENTIALS = True
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:5173',
+    ]
+    CORS_TRUSTED_ORIGINS = [
+        'http://localhost:5173',
+    ]
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:5173',
+    ]
 
-    CORS_ORIGIN_ALLOW_ALL = True
+    SESSION_COOKIE_NAME = 'sessionid'
+    SESSION_COOKIE_AGE = 3600
+    SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
     ROOT_URLCONF = 'core.urls'
+
+    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
     TEMPLATES = [
         {
