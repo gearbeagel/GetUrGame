@@ -9,9 +9,7 @@ from django.conf import settings
 from django.contrib.auth import login, logout
 from django.http import JsonResponse
 from django.urls import reverse
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt, csrf_protect
-from model.model import get_keras_model, preprocess_data, get_tfidf_and_scaler
+from model.model import get_keras_model, get_tfidf_and_scaler, preprocess_data
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -29,13 +27,13 @@ class MainView(APIView):
     """
     Main View.
     """
-
     def get(self, request):
         links = {
-            "steam-login": request.build_absolute_uri(reverse('steam-login')),
-            "steam-logout": request.build_absolute_uri(reverse('steam-logout')),
-            "user-games": request.build_absolute_uri(reverse('user-games')),
-            "get-recs": request.build_absolute_uri(reverse('get-recs')),
+            "steam-login": request.build_absolute_uri(reverse("steam-login")),
+            "steam-logout":
+            request.build_absolute_uri(reverse("steam-logout")),
+            "user-games": request.build_absolute_uri(reverse("user-games")),
+            "get-recs": request.build_absolute_uri(reverse("get-recs")),
         }
         return Response(links)
 
@@ -44,32 +42,38 @@ class SteamLoginView(APIView):
     """
     Initiates the Steam OpenID login process.
     """
-
     def get(self, request):
         try:
-            is_frontend = request.GET.get('source') == 'frontend'
-            return_to_url = (
-                f"{settings.FRONTEND_URL}/steam/callback" if is_frontend
-                else f"{settings.BACKEND_URL}/api/steam/callback"
-            )
+            is_frontend = request.GET.get("source") == "frontend"
+            return_to_url = (f"{settings.FRONTEND_URL}/steam/callback"
+                             if is_frontend else
+                             f"{settings.BACKEND_URL}/api/steam/callback")
 
             params = {
-                'openid.ns': 'http://specs.openid.net/auth/2.0',
-                'openid.mode': 'checkid_setup',
-                'openid.return_to': return_to_url,
-                'openid.realm': return_to_url,
-                'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
-                'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select'
+                "openid.ns":
+                "http://specs.openid.net/auth/2.0",
+                "openid.mode":
+                "checkid_setup",
+                "openid.return_to":
+                return_to_url,
+                "openid.realm":
+                return_to_url,
+                "openid.identity":
+                "http://specs.openid.net/auth/2.0/identifier_select",
+                "openid.claimed_id":
+                "http://specs.openid.net/auth/2.0/identifier_select"
             }
 
             steam_url = f"{STEAM_OPENID_URL}?{urlencode(params)}"
-            logger.info("Redirecting to Steam for authentication: %s", steam_url)
+            logger.info("Redirecting to Steam for authentication: %s",
+                        steam_url)
 
             return Response({"redirect_url": steam_url})
 
         except Exception as e:
             logger.error(f"Error in SteamLoginView: {str(e)}")
-            return Response({"error": "An error occurred during login."}, status=500)
+            return Response({"error": "An error occurred during login."},
+                            status=500)
 
 
 class SteamLogoutView(APIView):
@@ -92,13 +96,12 @@ class SteamCallbackView(APIView):
     """
     Handles the Steam OpenID callback and processes the user authentication.
     """
-
     def get(self, request):
         try:
             openid_params = request.GET
             logger.info("Received OpenID params: %s", openid_params)
 
-            steam_id = openid_params['openid.identity'].split('/')[-1]
+            steam_id = openid_params["openid.identity"].split("/")[-1]
             username = get_steam_username(steam_id)
 
             user, created = CustomUser.objects.get_or_create(steam_id=steam_id)
@@ -115,26 +118,31 @@ class SteamCallbackView(APIView):
             print(f"Session key: {session_key}")
             print(f"User is authenticated: {request.user.is_authenticated}")
 
-            return Response({"message": "Logged user in successfully", "steam_id": steam_id, "username": username})
+            return Response({
+                "message": "Logged user in successfully",
+                "steam_id": steam_id,
+                "username": username
+            })
 
         except Exception as e:
             logger.error("Error during Steam callback: %s", str(e))
-            return Response({"error": f"An error occurred: {str(e)}"}, status=500)
+            return Response({"error": f"An error occurred: {str(e)}"},
+                            status=500)
 
 
 def get_steam_username(steam_id):
     api_key = settings.STEAM_API_KEY
     url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
     params = {
-        'key': api_key,
-        'steamids': steam_id,
+        "key": api_key,
+        "steamids": steam_id,
     }
     response = requests.get(url, params=params)
     if response.status_code == 200:
         data = response.json()
-        if 'response' in data and 'players' in data['response']:
-            player_data = data['response']['players'][0]
-            return player_data.get('personaname', 'No username found')
+        if "response" in data and "players" in data["response"]:
+            player_data = data["response"]["players"][0]
+            return player_data.get("personaname", "No username found")
     return None
 
 
@@ -142,19 +150,21 @@ class CheckAuthView(APIView):
     """
     Checks if the user is authenticated.
     """
-
     def get(self, request):
         if request.user.is_authenticated:
             username = get_steam_username(request.user.steam_id)
             logger.info("User is authenticated: %s", username)
-            return JsonResponse({"isAuthenticated": True, "username": username})
+            return JsonResponse({
+                "isAuthenticated": True,
+                "username": username
+            })
         logger.info("User is not authenticated")
         return JsonResponse({"isAuthenticated": False, "username": None})
 
 
 class UserGamesView(APIView):
     """
-    Fetches the logged-in user's Steam library.
+    Fetches the logged-in user"s Steam library.
     """
     permission_classes = [IsAuthenticated]
 
@@ -163,36 +173,38 @@ class UserGamesView(APIView):
         response = requests.get(
             "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/",
             params={
-                'key': settings.STEAM_API_KEY,
-                'steamid': steam_id,
-                'include_appinfo': True,
-                'format': 'json',
-            }
-        )
+                "key": settings.STEAM_API_KEY,
+                "steamid": steam_id,
+                "include_appinfo": True,
+                "format": "json",
+            })
         if response.status_code == 200:
-            games_data = response.json().get('response', {}).get('games', [])
+            games_data = response.json().get("response", {}).get("games", [])
             game_details = []
 
             for game in games_data:
-                appid = game['appid']
+                appid = game["appid"]
                 store_response = requests.get(
                     "https://store.steampowered.com/api/appdetails",
-                    params={"appids": appid}
-                )
+                    params={"appids": appid})
                 if store_response.status_code == 200:
-                    store_data = store_response.json().get(str(appid), {}).get("model", {})
-                    short_description = store_data.get('short_description', 'No description available')
-                    cover_url = store_data.get('header_image',
-                                               f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/header.jpg")
+                    store_data = store_response.json().get(str(appid), {}).get(
+                        "model", {})
+                    short_description = store_data.get(
+                        "short_description", "No description available")
+                    cover_url = store_data.get(
+                        "header_image",
+                        f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/header.jpg"
+                    )
                 else:
-                    short_description = 'No description available'
+                    short_description = "No description available"
                     cover_url = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/header.jpg"
 
                 game_details.append({
-                    'name': game['name'],
-                    'short_description': short_description,
-                    'cover_url': cover_url,
-                    'appid': appid,
+                    "name": game["name"],
+                    "short_description": short_description,
+                    "cover_url": cover_url,
+                    "appid": appid,
                 })
             return Response({"games": game_details})
 
@@ -203,15 +215,17 @@ def get_user_games_data(steam_id):
     response = requests.get(
         "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/",
         params={
-            'key': settings.STEAM_API_KEY,
-            'steamid': steam_id,
-            'include_appinfo': True,
-            'format': 'json',
-        }
-    )
+            "key": settings.STEAM_API_KEY,
+            "steamid": steam_id,
+            "include_appinfo": True,
+            "format": "json",
+        })
     if response.status_code == 200:
-        user_games_data = response.json().get('response', {}).get('games', [])
-        return [{'name': game['name'], 'appid': game['appid']} for game in user_games_data]
+        user_games_data = response.json().get("response", {}).get("games", [])
+        return [{
+            "name": game["name"],
+            "appid": game["appid"]
+        } for game in user_games_data]
     return []
 
 
@@ -229,36 +243,39 @@ class RecommendGames(APIView):
         user_games = get_user_games_data(steam_id)
 
         if not user_games:
-            return Response({'error': 'Unable to retrieve games for recommendations'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Unable to retrieve games for recommendations"},
+                status=status.HTTP_400_BAD_REQUEST)
 
         model = get_keras_model()
-        path = kagglehub.dataset_download('artermiloff/steam-games-dataset')
-        df = pd.read_csv(path + '/games_may2024_cleaned.csv')
+        path = kagglehub.dataset_download("artermiloff/steam-games-dataset")
+        df = pd.read_csv(path + "/games_may2024_cleaned.csv")
         df = preprocess_data(df)
 
         tfidf, scaler = get_tfidf_and_scaler(df)
-        owned_game_names = [game['name'] for game in user_games]
-        filtered_df = df[~df['name'].isin(owned_game_names)]
+        owned_game_names = [game["name"] for game in user_games]
+        filtered_df = df[~df["name"].isin(owned_game_names)]
 
-        combined_features_tfidf = tfidf.transform(filtered_df['combined_features'])
-        additional_features = filtered_df[['review_sentiment', 'estimated_owners_processed']].to_numpy()
+        combined_features_tfidf = tfidf.transform(
+            filtered_df["combined_features"])
+        additional_features = filtered_df[[
+            "review_sentiment", "estimated_owners_processed"
+        ]].to_numpy()
 
-        game_features = np.hstack([combined_features_tfidf.toarray(), additional_features])
+        game_features = np.hstack(
+            [combined_features_tfidf.toarray(), additional_features])
         game_features_scaled = scaler.transform(game_features)
 
         predicted_scores = model.predict(game_features_scaled, verbose=0)
 
-        filtered_df['predicted_score'] = predicted_scores
+        filtered_df["predicted_score"] = predicted_scores
 
-        recommendations = (
-            filtered_df[['name', 'predicted_score', 'tags', 'genres', 'AppID', 'reviews', 'short_description',
-                         'header_image']]
-            .sort_values('predicted_score', ascending=False)
-            .head(200)
-            .sample(5)
-            .to_dict(orient='records')
-        )
+        recommendations = (filtered_df[[
+            "name", "predicted_score", "tags", "genres", "AppID", "reviews",
+            "short_description", "header_image"
+        ]].sort_values(
+            "predicted_score",
+            ascending=False).head(200).sample(5).to_dict(orient="records"))
 
         serializer = RecommendationSerializer(recommendations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
