@@ -36,11 +36,14 @@ class Dev(Configuration):
     LOGIN_REDIRECT_URL = '/api/user/games/'
     LOGOUT_REDIRECT_URL = '/'
 
-    CSRF_COOKIE_NAME = "csrftoken"
     CSRF_COOKIE_HTTPONLY = False
+    CSRF_COOKIE_SECURE = True
 
     SESSION_COOKIE_SAMESITE = "None"
     SESSION_COOKIE_SECURE = True
+
+    CSRF_COOKIE_SAMESITE = 'None'
+    CSRF_COOKIE_HTTPONLY = False
 
     INSTALLED_APPS = [
         'corsheaders',
@@ -65,7 +68,7 @@ class Dev(Configuration):
         'django.middleware.security.SecurityMiddleware',
         'django.contrib.sessions.middleware.SessionMiddleware',
         'django.middleware.common.CommonMiddleware',
-        'django.middleware.csrf.CsrfViewMiddleware',
+        #'django.middleware.csrf.CsrfViewMiddleware',
         'django.contrib.auth.middleware.AuthenticationMiddleware',
         'django.contrib.messages.middleware.MessageMiddleware',
         'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -79,6 +82,10 @@ class Dev(Configuration):
         'http://localhost:5173',
     ]
     CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:5173',
+    ]
+
+    CORS_ORIGIN_WHITELIST = [
         'http://localhost:5173',
     ]
 
@@ -176,7 +183,11 @@ class Dev(Configuration):
                 "style": "{",
             },
         },
-    }
+        'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+}
 
     LANGUAGE_CODE = 'en-us'
 

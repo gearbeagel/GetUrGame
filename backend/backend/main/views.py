@@ -10,7 +10,7 @@ from django.contrib.auth import login, logout
 from django.http import JsonResponse
 from django.urls import reverse
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, csrf_protect
 from model.model import get_keras_model, preprocess_data, get_tfidf_and_scaler
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -78,16 +78,11 @@ class SteamLogoutView(APIView):
     """
     permission_classes = [IsAuthenticated]
 
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
-
-    def post(self, request):
+    def get(self, request):
         try:
             logout(request)
             logger.info("User logged out successfully.")
             return Response({"message": "Logged out successfully."})
-
         except Exception as e:
             logger.error(f"Logout incomplete: {str(e)}")
             return Response({"message": "Logout incomplete."}, status=500)
