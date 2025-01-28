@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import axios from "axios";
 import Homepage from "./components/Homepage";
 import SteamCallback from "./components/SteamCallback";
+import GamesPage from "./components/UserGames";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -46,6 +47,10 @@ function App() {
         <Route
           path="/steam/callback"
           element={<SteamCallback setIsAuthenticated={setIsAuthenticated} setUsername={setUsername} />}
+        />
+        <Route
+          path="/games"
+          element={<GamesPage />}
         />
       </Routes>
     </Router>

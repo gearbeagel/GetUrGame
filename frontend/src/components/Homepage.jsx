@@ -58,7 +58,7 @@ const Homepage = ({ isAuthenticated, username }) => {
             game<i>!!!</i>
           </span>
         </h1>
-        <p className="text-xl text-purple-400">
+        <p className="text-xl text-purple-400 mb-3">
           discover your next favorite game on Steam.
         </p>
         {username && (
@@ -77,7 +77,7 @@ const Homepage = ({ isAuthenticated, username }) => {
           </NeonButton>
         ) : (
           <>
-            <NeonButton color="green">Look Through Your Games</NeonButton>
+            <NeonButton color="green" href='/games'>Look Through Your Games</NeonButton>
             <NeonButton color="pink">Get Recommendations</NeonButton>
             <NeonButton color="purple" onClick={handleSteamLogout}>
               Logout

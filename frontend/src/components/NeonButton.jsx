@@ -1,8 +1,8 @@
 import React from "react"
 
-const NeonButton = ({ children, color, onClick }) => {
+const NeonButton = ({ children, color, onClick, href }) => {
   const baseClasses =
-    "px-6 py-3 rounded-full font-bold text-lg transition-all duration-300 ease-in-out flex items-center justify-center cursor-pointer"
+    "px-6 py-3 rounded-full font-bold text-lg transition-all duration-300 ease-in-out flex items-center justify-center"
   const colorClasses = {
     blue: "bg-blue-500 text-white hover:bg-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.5)] hover:shadow-[0_0_25px_rgba(59,130,246,0.8)]",
     green:
@@ -12,7 +12,21 @@ const NeonButton = ({ children, color, onClick }) => {
       "bg-purple-500 text-white hover:bg-purple-600 shadow-[0_0_15px_rgba(168,85,247,0.5)] hover:shadow-[0_0_25px_rgba(168,85,247,0.8)]",
   }
 
-  return <button className={`${baseClasses} ${colorClasses[color]}`} onClick={onClick}>{children}</button>
+  const buttonClasses = `${baseClasses} ${colorClasses[color]}`
+
+  if (href) {
+    return (
+      <a href={href} className={buttonClasses}>
+        {children}
+      </a>
+    )
+  }
+
+  return (
+    <button className={buttonClasses} onClick={onClick}>
+      {children}
+    </button>
+  )
 }
 
 export default NeonButton
