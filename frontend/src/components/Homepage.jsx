@@ -36,7 +36,7 @@ const Homepage = ({ isAuthenticated, username }) => {
           },
         }
       );
-  
+
       if (response.status === 200) {
         console.log("Logout successful!")
         window.location.reload();
