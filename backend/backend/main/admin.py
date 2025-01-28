@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from backend.main.models import CustomUser
+from main.models import CustomUser
 
 # Register your models here.
 
