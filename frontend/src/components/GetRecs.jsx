@@ -1,13 +1,13 @@
-import GameBox from "../components/GameBox";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import NeonButton from "../components/NeonButton";
-import { useEffect, useState } from "react";
+import GameBox from "../components/GameBox";
 import axios from "axios";
-import { handleSteamLogout } from "../misc/Api";
+import { getCsrfToken, handleSteamLogout } from "../misc/Api";
 import { FaSpinner } from "react-icons/fa";
 
-export default function GamesPage() {
-  const [gameData, setGameData] = useState([]);
+export default function RecommendationsPage() {
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -16,17 +16,25 @@ export default function GamesPage() {
     return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  const getGameData = async () => {
+  const getRecommendations = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(
-        "http://127.0.0.1:8000/api/user/games/",
+      const csrfToken = await getCsrfToken();
+      console.log("CSRF Token being sent:", csrfToken);
+
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/get-recs/",
+        {},
         {
           withCredentials: true,
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/json",
+          },
         }
       );
-      setGameData(response.data);
+      setRecommendations(response.data);
     } catch (error) {
       console.error("Error fetching recommendations:", error);
       setError("Failed to fetch recommendations. Please try again.");
@@ -34,10 +42,6 @@ export default function GamesPage() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    getGameData();
-  }, []);
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -53,17 +57,23 @@ export default function GamesPage() {
           <Link to="/">
             <NeonButton color="blue">Home</NeonButton>
           </Link>
-          <NeonButton color="pink" href="/get-recs">
-            Get Recommendations
-          </NeonButton>
+          <Link to="/games">
+            <NeonButton color="pink">Your Games</NeonButton>
+          </Link>
           <NeonButton color="purple" onClick={handleSteamLogout}>
             Logout
           </NeonButton>
         </nav>
       </header>
       <main className="p-8">
-        <h2 className="text-4xl font-bold mb-10 text-center">Your Games</h2>
-        {error && <p className="text-red-500">{error}</p>}
+        <h2 className="text-4xl font-bold mb-10 text-center">
+          Recommended Games
+        </h2>
+        <div className="text-center mb-8 flex justify-center">
+          <NeonButton color="green" onClick={getRecommendations}>
+            Get Recommendations
+          </NeonButton>
+        </div>
         {loading && (
           <div className="text-center">
             <FaSpinner
@@ -71,13 +81,14 @@ export default function GamesPage() {
             />
           </div>
         )}
+        {error && <div className="text-red-500 text-center">{error}</div>}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {gameData.map((game, index) => (
+          {recommendations.map((game, index) => (
             <GameBox
-              key={game.id}
+              key={game.AppID}
               game={game}
-              appid={game.appid}
-              cover={game.cover_url}
+              appid={game.AppID}
+              cover={game.header_image}
               index={index}
             />
           ))}

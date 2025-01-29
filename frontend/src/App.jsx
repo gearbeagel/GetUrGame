@@ -4,6 +4,7 @@ import axios from "axios";
 import Homepage from "./components/Homepage";
 import SteamCallback from "./components/SteamCallback";
 import GamesPage from "./components/UserGames";
+import RecommendationsPage from "./components/GetRecs";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -51,6 +52,10 @@ function App() {
         <Route
           path="/games"
           element={<GamesPage />}
+        />
+        <Route
+          path="/get-recs"
+          element={<RecommendationsPage/>}
         />
       </Routes>
     </Router>

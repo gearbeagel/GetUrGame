@@ -2,11 +2,17 @@ import React, { useState } from "react";
 import NeonButton from "./NeonButton";
 import { FaSteam } from "react-icons/fa";
 import axios from "axios";
-import { getCsrfToken } from "../misc/Api";
+import { handleSteamLogout } from "../misc/Api";
+import { FaSpinner } from "react-icons/fa";
 
 const Homepage = ({ isAuthenticated, username }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const getRandomColor = () => {
+    const colors = ["blue", "purple", "green", "pink"];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
 
   const handleSteamLogin = async () => {
     try {
@@ -24,33 +30,9 @@ const Homepage = ({ isAuthenticated, username }) => {
     }
   };
 
-  const handleSteamLogout = async () => {
-    try {
-
-      const response = await axios.get(
-        "http://127.0.0.1:8000/api/steam/logout/",
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status === 200) {
-        console.log("Logout successful!")
-        window.location.reload();
-      } else {
-        console.error("Logout failed:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error during Steam logout:", error);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
-      <header className="text-center mb-12">
+      <header className="text-center mb-8">
         <h1 className="text-6xl font-bold mb-4 animate-pulse">
           <span className="text-blue-500">get</span>{" "}
           <span className="text-pink-500">ur</span>{" "}
@@ -62,14 +44,18 @@ const Homepage = ({ isAuthenticated, username }) => {
           discover your next favorite game on Steam.
         </p>
         {username && (
-          <p className="text-xl text-blue-400">welcome, {username}!</p>
+          <p className="text-xl text-blue-400 mt-3">welcome, {username}!</p>
         )}
       </header>
 
       <main className="flex flex-col items-center space-y-6 mb-12">
         {error && <p className="text-red-500">{error}</p>}
         {loading ? (
-          <p className="text-white">Loading...</p>
+          <div className="text-center">
+          <FaSpinner
+            className={`animate-spin text-${getRandomColor()}-500 text-4xl mx-auto`}
+          />
+        </div>
         ) : !isAuthenticated ? (
           <NeonButton color="blue" onClick={handleSteamLogin}>
             <FaSteam className="w-6 h-6 mr-2" />
@@ -77,8 +63,12 @@ const Homepage = ({ isAuthenticated, username }) => {
           </NeonButton>
         ) : (
           <>
-            <NeonButton color="green" href='/games'>Look Through Your Games</NeonButton>
-            <NeonButton color="pink">Get Recommendations</NeonButton>
+            <NeonButton color="green" href="/games">
+              Look Through Your Games
+            </NeonButton>
+            <NeonButton color="pink" href="/get-recs">
+              Get Recommendations
+            </NeonButton>
             <NeonButton color="purple" onClick={handleSteamLogout}>
               Logout
             </NeonButton>

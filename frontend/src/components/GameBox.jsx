@@ -26,7 +26,7 @@ const colorClasses = {
   },
 };
 
-const GameBox = ({ game, index }) => {
+const GameBox = ({ game, index, appid, cover }) => {
   const color = colors[index % colors.length];
   const { border, hoverBorder, text } = colorClasses[color];
 
@@ -36,7 +36,7 @@ const GameBox = ({ game, index }) => {
     >
       <div className="relative h-48">
         <img
-          src={game.cover_url || "/placeholder.svg"}
+          src={cover || "/placeholder.svg"}
           alt={game.name}
           className="w-full h-full object-cover"
         />
@@ -48,7 +48,7 @@ const GameBox = ({ game, index }) => {
           <NeonButton
             color={color}
             onClick={() =>
-              window.open(`https://store.steampowered.com/app/${game.appid}/`, "_blank")
+              window.open(`https://store.steampowered.com/app/${appid}/`, "_blank")
             }
           >
             View on Steam

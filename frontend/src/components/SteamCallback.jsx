@@ -1,10 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FaSpinner } from "react-icons/fa";
 
 const SteamCallback = ({ setIsAuthenticated, setUsername }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  const getRandomColor = () => {
+    const colors = ["blue", "purple", "green", "pink"];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
 
   useEffect(() => {
     const handleSteamCallback = async () => {
@@ -16,9 +22,13 @@ const SteamCallback = ({ setIsAuthenticated, setUsername }) => {
             withCredentials: true,
           }
         );
-        console.log(response)
+        console.log(response);
 
-        if (response.status === 200 && response.data.steam_id && response.data.username) {
+        if (
+          response.status === 200 &&
+          response.data.steam_id &&
+          response.data.username
+        ) {
           setIsAuthenticated(true);
           setUsername(response.data.username);
           navigate("/");
@@ -37,9 +47,16 @@ const SteamCallback = ({ setIsAuthenticated, setUsername }) => {
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
       {loading ? (
-        <p>Loading...</p>
+        <div className="text-center">
+          <FaSpinner
+            className={`animate-spin text-${getRandomColor()}-500 text-4xl mx-auto`}
+          />
+        </div>
       ) : (
-        <p>Authentication failed or completed successfully. You will be redirected.</p>
+        <p>
+          Authentication failed or completed successfully. You will be
+          redirected.
+        </p>
       )}
     </div>
   );
