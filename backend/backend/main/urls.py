@@ -1,8 +1,16 @@
 from django.urls import path
-from .views import (CheckAuthView, RecommendGames, SteamCallbackView,
-                    SteamLoginView, SteamLogoutView, UserGamesView)
+from .views import (
+    CSRFView,
+    CheckAuthView,
+    RecommendGames,
+    SteamCallbackView,
+    SteamLoginView,
+    SteamLogoutView,
+    UserGamesView,
+)
 
 urlpatterns = [
+    path("csrf/", CSRFView.as_view(), name="csrf"),
     path("steam/login/", SteamLoginView.as_view(), name="steam-login"),
     path("steam/logout/", SteamLogoutView.as_view(), name="steam-logout"),
     path("steam/callback/", SteamCallbackView.as_view(), name="steam-callback"),

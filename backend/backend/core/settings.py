@@ -45,12 +45,21 @@ class Dev(Configuration):
     CSRF_COOKIE_HTTPONLY = False
 
     INSTALLED_APPS = [
-        "corsheaders", "django.contrib.admin", "django.contrib.auth",
-        "django.contrib.contenttypes", "django.contrib.sessions",
-        "django.contrib.messages", "django.contrib.staticfiles",
-        "django.contrib.sites", "rest_framework", "allauth", "allauth.account",
-        "allauth.socialaccount", "allauth.socialaccount.providers.steam",
-        "allauth.socialaccount.providers.openid", "main"
+        "corsheaders",
+        "django.contrib.admin",
+        "django.contrib.auth",
+        "django.contrib.contenttypes",
+        "django.contrib.sessions",
+        "django.contrib.messages",
+        "django.contrib.staticfiles",
+        "django.contrib.sites",
+        "rest_framework",
+        "allauth",
+        "allauth.account",
+        "allauth.socialaccount",
+        "allauth.socialaccount.providers.steam",
+        "allauth.socialaccount.providers.openid",
+        "main",
     ]
 
     MIDDLEWARE = [
@@ -62,7 +71,7 @@ class Dev(Configuration):
         "django.contrib.auth.middleware.AuthenticationMiddleware",
         "django.contrib.messages.middleware.MessageMiddleware",
         "django.middleware.clickjacking.XFrameOptionsMiddleware",
-        "allauth.account.middleware.AccountMiddleware"
+        "allauth.account.middleware.AccountMiddleware",
     ]
     CORS_ALLOW_CREDENTIALS = True
     CORS_ALLOWED_ORIGINS = [
@@ -74,7 +83,6 @@ class Dev(Configuration):
     CSRF_TRUSTED_ORIGINS = [
         "http://localhost:5173",
     ]
-
     CORS_ORIGIN_WHITELIST = [
         "http://localhost:5173",
     ]
@@ -84,8 +92,6 @@ class Dev(Configuration):
     SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
     ROOT_URLCONF = "core.urls"
-
-    SESSION_ENGINE = "django.contrib.sessions.backends.db"
 
     TEMPLATES = [
         {
@@ -139,20 +145,16 @@ class Dev(Configuration):
 
     AUTH_PASSWORD_VALIDATORS = [
         {
-            "NAME":
-            "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+            "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
         },
         {
-            "NAME":
-            "django.contrib.auth.password_validation.MinimumLengthValidator",
+            "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
         },
         {
-            "NAME":
-            "django.contrib.auth.password_validation.CommonPasswordValidator",
+            "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
         },
         {
-            "NAME":
-            "django.contrib.auth.password_validation.NumericPasswordValidator",
+            "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
         },
     ]
 
@@ -173,16 +175,24 @@ class Dev(Configuration):
         },
         "formatters": {
             "colored": {
-                "format":
-                "\033[1;36m{asctime}\033[0m \033[1;32m{levelname}\033[0m - {name}: {message}",
+                "format": "\033[1;36m{asctime}\033[0m \033[1;32m{levelname}\033[0m - {name}: {message}",
                 "style": "{",
             },
         },
-        "root": {
-            "handlers": ["console"],
-            "level": "DEBUG",
-        },
     }
+
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": "redis://127.0.0.1:6379/1",
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
+    }
+
+    SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+    SESSION_CACHE_ALIAS = "default"
 
     LANGUAGE_CODE = "en-us"
 
