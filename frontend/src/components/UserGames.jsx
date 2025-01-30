@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { handleSteamLogout } from "../misc/Api";
 import { FaSpinner } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 export default function GamesPage() {
+  const navigate = useNavigate();
   const [gameData, setGameData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -19,9 +21,10 @@ export default function GamesPage() {
   const getGameData = async () => {
     setLoading(true);
     setError(null);
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
     try {
       const response = await axios.get(
-        "http://127.0.0.1:8000/api/user/games/",
+        `${baseUrl}/api/user/games/`,
         {
           withCredentials: true,
         }
@@ -56,8 +59,8 @@ export default function GamesPage() {
           <NeonButton color="pink" href="/get-recs">
             Get Recommendations
           </NeonButton>
-          <NeonButton color="purple" onClick={handleSteamLogout}>
-            Logout
+          <NeonButton color="purple" onClick={() => handleSteamLogout(navigate)}>
+              Logout
           </NeonButton>
         </nav>
       </header>

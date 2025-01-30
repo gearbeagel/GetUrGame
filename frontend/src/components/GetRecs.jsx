@@ -5,11 +5,13 @@ import GameBox from "../components/GameBox";
 import axios from "axios";
 import { getCsrfToken, handleSteamLogout } from "../misc/Api";
 import { FaSpinner } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 export default function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const getRandomColor = () => {
     const colors = ["blue", "purple", "green", "pink"];
@@ -19,12 +21,13 @@ export default function RecommendationsPage() {
   const getRecommendations = async () => {
     setLoading(true);
     setError(null);
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
     try {
       const csrfToken = await getCsrfToken();
       console.log("CSRF Token being sent:", csrfToken);
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/get-recs/",
+        `${baseUrl}/api/get-recs/`,
         {},
         {
           withCredentials: true,
@@ -60,7 +63,7 @@ export default function RecommendationsPage() {
           <Link to="/games">
             <NeonButton color="pink">Your Games</NeonButton>
           </Link>
-          <NeonButton color="purple" onClick={handleSteamLogout}>
+          <NeonButton color="purple" onClick={() => handleSteamLogout(navigate)}>
             Logout
           </NeonButton>
         </nav>
