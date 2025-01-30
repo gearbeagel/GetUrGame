@@ -19,6 +19,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from model.model import get_keras_model, get_tfidf_and_scaler, preprocess_data
+
+from .decorators import user_not_authenticated
 from .models import CustomUser
 from .serializers import RecommendationSerializer
 
@@ -51,6 +53,7 @@ class CSRFView(APIView):
         return JsonResponse({"csrfToken": get_token(request)})
 
 
+@method_decorator(user_not_authenticated, name="get")
 class SteamLoginView(APIView):
     """
     Initiates the Steam OpenID login process.
