@@ -4,12 +4,10 @@ import { FaSteam } from "react-icons/fa";
 import axios from "axios";
 import { handleSteamLogout } from "../misc/Api";
 import { FaSpinner } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
 
 const Homepage = ({ isAuthenticated, username }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
 
   const getRandomColor = () => {
     const colors = ["blue", "purple", "green", "pink"];
@@ -19,7 +17,7 @@ const Homepage = ({ isAuthenticated, username }) => {
   const handleSteamLogin = async () => {
     try {
       const response = await axios.get(
-        `/api/steam/login/?source=frontend`,
+        "http://127.0.0.1:8000/api/steam/login/?source=frontend",
         {
           withCredentials: true,
         }
@@ -71,7 +69,7 @@ const Homepage = ({ isAuthenticated, username }) => {
             <NeonButton color="pink" href="/get-recs">
               Get Recommendations
             </NeonButton>
-            <NeonButton color="purple" onClick={() => handleSteamLogout(navigate)}>
+            <NeonButton color="purple" onClick={handleSteamLogout}>
               Logout
             </NeonButton>
           </>

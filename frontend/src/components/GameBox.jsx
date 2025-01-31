@@ -34,7 +34,7 @@ const GameBox = ({ game, index, appid, cover }) => {
     <div
       className={`bg-gray-900 rounded-lg overflow-hidden shadow-lg border ${border} ${hoverBorder} transition-colors duration-300 max-w-sm mx-auto flex flex-col`}
     >
-      <div className="relative w-90 h-40">
+      <div className="relative h-48">
         <img
           src={cover || "/placeholder.svg"}
           alt={game.name}

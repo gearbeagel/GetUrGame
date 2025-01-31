@@ -14,11 +14,10 @@ const SteamCallback = ({ setIsAuthenticated, setUsername }) => {
 
   useEffect(() => {
     const handleSteamCallback = async () => {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL;
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const response = await axios.get(
-          `${baseUrl}/api/steam/callback/?${urlParams.toString()}`,
+          `http://127.0.0.1:8000/api/steam/callback/?${urlParams.toString()}`,
           {
             withCredentials: true,
           }
