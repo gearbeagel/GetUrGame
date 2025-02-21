@@ -59,7 +59,8 @@ class Dev(Configuration):
         "allauth.socialaccount",
         "allauth.socialaccount.providers.steam",
         "allauth.socialaccount.providers.openid",
-        "main",
+        "main.apps.MainConfig",
+        "pytest",
     ]
 
     MIDDLEWARE = [
