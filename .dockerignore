@@ -1,0 +1,21 @@
+# Exclude virtual environment directories
+.venv/
+venv/
+
+# Common Python items to ignore
+__pycache__/
+*.pyc
+*.pyo
+migrations/
+
+# System and IDE files
+.DS_Store
+.env
+*.log
+
+node_modules/
+build/
+dist/
+.DS_Store
+*.log
+npm-debug.log*
