@@ -15,7 +15,9 @@ def api_client():
 
 @pytest.fixture
 def user():
-    return User.objects.create_user(username="testuser", password="testpass", steam_id="123456789")
+    return User.objects.create_user(
+        username="testuser", password="testpass", steam_id="123456789"
+    )
 
 
 @pytest.mark.django_db
@@ -57,7 +59,9 @@ def test_steam_logout_view(api_client, user):
 @pytest.mark.django_db
 def test_steam_callback_view(api_client, mocker):
     mocker.patch("main.views.get_steam_username", return_value="testuser")
-    mocker.patch.dict(os.environ, {"STEAM_IDENTITY_URL": os.getenv("STEAM_IDENTITY_URL")})
+    mocker.patch.dict(
+        os.environ, {"STEAM_IDENTITY_URL": os.getenv("STEAM_IDENTITY_URL")}
+    )
     url = reverse("steam-callback")
     response = api_client.get(url, {"openid.identity": os.getenv("STEAM_IDENTITY_URL")})
     assert response.status_code == 200
@@ -82,7 +86,8 @@ def test_user_games_view(api_client, user, mocker):
     mocker.patch(
         "requests.get",
         return_value=mocker.Mock(
-            status_code=200, json=lambda: {"response": {"games": [{"appid": 1, "name": "Game 1"}]}}
+            status_code=200,
+            json=lambda: {"response": {"games": [{"appid": 1, "name": "Game 1"}]}},
         ),
     )
     api_client.force_authenticate(user=user)

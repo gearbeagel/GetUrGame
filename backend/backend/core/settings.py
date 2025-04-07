@@ -24,6 +24,7 @@ class Dev(Configuration):
 
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
     BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+    FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8080/recommend/")
 
     SECRET_KEY = os.getenv("SECRET_KEY")
     STEAM_API_KEY = os.getenv("STEAM_API_KEY")
@@ -185,7 +186,7 @@ class Dev(Configuration):
     CACHES = {
         "default": {
             "BACKEND": "django_redis.cache.RedisCache",
-            "LOCATION": "redis://redis:6379/1",
+            "LOCATION": "redis://gyg-redis:6379/1",
             "OPTIONS": {
                 "CLIENT_CLASS": "django_redis.client.DefaultClient",
             },

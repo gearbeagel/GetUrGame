@@ -1,9 +1,6 @@
 import logging
 from urllib.parse import urlencode
 
-import kagglehub
-import numpy as np
-import pandas as pd
 import requests
 from django.conf import settings
 from django.contrib.auth import login, logout
@@ -18,8 +15,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from model.model import get_keras_model, get_tfidf_and_scaler, preprocess_data
-
 from .decorators import user_not_authenticated
 from .models import CustomUser
 from .serializers import RecommendationSerializer
@@ -27,6 +22,8 @@ from .serializers import RecommendationSerializer
 STEAM_OPENID_URL = "https://steamcommunity.com/openid/login"
 
 logger = logging.getLogger(__name__)
+
+FASTAPI_URL = "http://gyg-model:8080/recommend/"
 
 
 class MainView(APIView):
@@ -131,7 +128,13 @@ class SteamCallbackView(APIView):
             print(f"Session key: {session_key}")
             print(f"User is authenticated: {request.user.is_authenticated}")
 
-            return Response({"message": "Logged user in successfully", "steam_id": steam_id, "username": username})
+            return Response(
+                {
+                    "message": "Logged user in successfully",
+                    "steam_id": steam_id,
+                    "username": username,
+                }
+            )
 
         except Exception as e:
             logger.error("Error during Steam callback: %s", str(e))
@@ -193,17 +196,25 @@ class UserGamesView(APIView):
             for game in games_data:
                 appid = game["appid"]
                 store_response = requests.get(
-                    "https://store.steampowered.com/api/appdetails", params={"appids": appid}
+                    "https://store.steampowered.com/api/appdetails",
+                    params={"appids": appid},
                 )
                 if store_response.status_code == 200:
-                    store_data = store_response.json().get(str(appid), {}).get("data", {})
-                    short_description = store_data.get("short_description", "No description available")
+                    store_data = (
+                        store_response.json().get(str(appid), {}).get("data", {})
+                    )
+                    short_description = store_data.get(
+                        "short_description", "No description available"
+                    )
                     cover_url = store_data.get(
-                        "header_image", f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/header.jpg"
+                        "header_image",
+                        f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/header.jpg",
                     )
                 else:
                     short_description = "No description available"
-                    cover_url = f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/header.jpg"
+                    cover_url = (
+                        f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/header.jpg"
+                    )
                 game_details.append(
                     {
                         "name": game["name"],
@@ -229,19 +240,18 @@ def get_user_games_data(steam_id):
     )
     if response.status_code == 200:
         user_games_data = response.json().get("response", {}).get("games", [])
-        return [{"name": game["name"], "appid": game["appid"]} for game in user_games_data]
+        return [
+            {"name": game["name"], "appid": game["appid"]} for game in user_games_data
+        ]
     return []
 
 
 class RecommendGames(APIView):
     """
-    View for getting recommendations.
+    View for getting game recommendations based on the user's entire game library.
     """
 
     permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        return Response({"message": "Get your own recommendations!"})
 
     @method_decorator(ensure_csrf_cookie)
     def post(self, request):
@@ -250,36 +260,25 @@ class RecommendGames(APIView):
 
         if not user_games:
             return Response(
-                {"error": "Unable to retrieve games for recommendations"}, status=status.HTTP_400_BAD_REQUEST
+                {"error": "Unable to retrieve games for recommendations"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        model = get_keras_model()
-        path = kagglehub.dataset_download("artermiloff/steam-games-dataset")
-        df = pd.read_csv(path + "/games_may2024_cleaned.csv")
-        df = preprocess_data(df)
-
-        tfidf, scaler = get_tfidf_and_scaler(df)
         owned_game_names = [game["name"] for game in user_games]
-        filtered_df = df[~df["name"].isin(owned_game_names)]
 
-        combined_features_tfidf = tfidf.transform(filtered_df["combined_features"])
-        additional_features = filtered_df[["review_sentiment", "estimated_owners_processed"]].to_numpy()
-
-        game_features = np.hstack([combined_features_tfidf.toarray(), additional_features])
-        game_features_scaled = scaler.transform(game_features)
-
-        predicted_scores = model.predict(game_features_scaled, verbose=0)
-
-        filtered_df["predicted_score"] = predicted_scores
-        recommendations = (
-            filtered_df[
-                ["name", "predicted_score", "tags", "genres", "AppID", "reviews", "short_description", "header_image"]
-            ]
-            .sort_values("predicted_score", ascending=False)
-            .head(100)
-            .sample(5)
-            .to_dict(orient="records")
-        )
+        try:
+            response = requests.post(FASTAPI_URL, json={"game_names": owned_game_names})
+            response.raise_for_status()
+            recommendations = response.json()["recommendations"]
+            for game in recommendations:
+                game[
+                    "header_image"
+                ] = f"https://steamcdn-a.akamaihd.net/steam/apps/{game['appid']}/header.jpg"
+        except requests.exceptions.RequestException as e:
+            return Response(
+                {"error": f"FastAPI request failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         serializer = RecommendationSerializer(recommendations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

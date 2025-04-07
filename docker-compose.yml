@@ -1,47 +1,48 @@
 services:
-  backend:
+  gyg-backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: backend
+    container_name: gyg-backend
     volumes:
       - ./backend:/app
     ports:
       - "8000:8000"
     depends_on:
-      - db
-      - redis
+      - gyg-db
+      - gyg-redis
     environment:
         - DB_USER=${DB_USER}
         - DB_PASSWORD=${DB_PASSWORD}
         - DB_NAME=${DB_NAME}
-        - DB_HOST=db
+        - DB_HOST=gyg-db
         - DB_PORT=5432
         - STEAM_API_KEY=${STEAM_API_KEY}
         - VITE_API_URL=${VITE_API_URL}
+        - FASTAPI_URL=${FASTAPI_URL}
     command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
-  frontend:
+  gyg-frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: frontend
+    container_name: gyg-frontend
     ports:
       - "5173:5173"
     depends_on:
-      - backend
+      - gyg-backend
 
-  redis:
+  gyg-redis:
     image: redis:7
-    container_name: redis
+    container_name: gyg-redis
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
 
-  db:
+  gyg-db:
     image: postgres:15
-    container_name: db
+    container_name: gyg-db
     ports:
       - "5432:5432"
     volumes:
@@ -51,11 +52,11 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
 
-  model:
+  gyg-model:
     build:
-      context: model_service
+      context: ./model_service
       dockerfile: Dockerfile
-    container_name: model_service
+    container_name: gyg-model
     volumes:
       - ./model_service:/app
     ports:
