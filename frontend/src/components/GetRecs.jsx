@@ -85,9 +85,9 @@ export default function RecommendationsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {recommendations.map((game, index) => (
             <GameBox
-              key={game.AppID}
+              key={game.appid}
               game={game}
-              appid={game.AppID}
+              appid={game.appid}
               cover={game.header_image}
               index={index}
             />
