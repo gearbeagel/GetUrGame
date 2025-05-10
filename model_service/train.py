@@ -22,7 +22,7 @@ logger.info(f"Model directory created/verified at {MODEL_DIR}")
 
 logger.info("Loading dataset...")
 start_time = time.time()
-df = pd.read_csv(f"{MODEL_DIR}/games_may2024_cleaned.csv")
+df = pd.read_csv(f"{MODEL_DIR}/games_may2024_full.csv")
 logger.info(
     f"Dataset loaded with {len(df)} games in {time.time() - start_time:.2f} seconds"
 )
@@ -50,9 +50,11 @@ logger.info("Creating combined features from descriptions, tags, and genres...")
 df["combined_features"] = (
     df["short_description"].fillna("")
     + " "
-    + df["tags"].fillna("")
+    + df["categories"].fillna("")
     + " "
     + df["genres"].fillna("")
+    + " "
+    + df["tags"].fillna("")
 )
 
 logger.info("Cleaning text in combined features...")
@@ -90,7 +92,13 @@ genre_labels = label_encoder.fit_transform(df["primary_genre"])
 
 logger.info("Training RandomForest classifier...")
 start_time = time.time()
-rf_model = RandomForestClassifier(n_estimators=50, max_depth=10, random_state=42)
+rf_model = RandomForestClassifier(
+    n_estimators=200,  # More trees
+    max_depth=20,  # Deeper trees
+    min_samples_split=5,  # Prevent overfitting
+    min_samples_leaf=2,  # Prevent overfitting
+    random_state=42,
+)
 rf_model.fit(tfidf_matrix, genre_labels)
 logger.info(f"Model training completed in {time.time() - start_time:.2f} seconds")
 

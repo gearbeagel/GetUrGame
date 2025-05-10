@@ -1,8 +1,8 @@
 FROM python:3.12-slim
 
-WORKDIR /app
+WORKDIR /app-model-service
 
-COPY requirements.txt /app/
+COPY requirements.txt /app-model-service/
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       gcc \
@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       make \
       && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir -r /app/requirements.txt
+RUN pip install --no-cache-dir -r /app-model-service/requirements.txt
 
 RUN apt-get purge -y --auto-remove \
       gcc \
@@ -26,7 +26,7 @@ RUN apt-get purge -y --auto-remove \
       make \
       && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-COPY . /app/
+COPY . /app-model-service/
 
 EXPOSE 8080
 

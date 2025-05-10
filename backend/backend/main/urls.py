@@ -1,7 +1,8 @@
-from django.urls import path
+from django.urls import include, path
 from .views import (
     CSRFView,
     CheckAuthView,
+    FavoriteGameView,
     RecommendGames,
     SteamCallbackView,
     SteamLoginView,
@@ -9,7 +10,13 @@ from .views import (
     UserGamesView,
 )
 
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r"user/favorites", FavoriteGameView, basename="user-favorite-games")
+
 urlpatterns = [
+    path("", include(router.urls)),
     path("csrf/", CSRFView.as_view(), name="csrf"),
     path("steam/login/", SteamLoginView.as_view(), name="steam-login"),
     path("steam/logout/", SteamLogoutView.as_view(), name="steam-logout"),

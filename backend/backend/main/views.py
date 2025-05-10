@@ -16,10 +16,13 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from rest_framework import viewsets
 from .decorators import user_not_authenticated
-from .models import CustomUser
-from .serializers import RecommendationSerializer
+from .models import CustomUser, FavoriteGame
+from .serializers import FavoriteGameSerializer, RecommendationSerializer
+from rest_framework.pagination import PageNumberPagination
+from django.core.exceptions import ValidationError
+from django.http import Http404
 
 load_dotenv()
 
@@ -50,6 +53,9 @@ class MainView(APIView):
             "steam-login": request.build_absolute_uri(reverse("steam-login")),
             "steam-logout": request.build_absolute_uri(reverse("steam-logout")),
             "user-games": request.build_absolute_uri(reverse("user-games")),
+            "user-favorites": request.build_absolute_uri(
+                reverse("user-favorite-games")
+            ),
             "get-recs": request.build_absolute_uri(reverse("get-recs")),
             "check-auth": request.build_absolute_uri(reverse("check-auth")),
             "csrf": request.build_absolute_uri(reverse("csrf")),
@@ -59,6 +65,7 @@ class MainView(APIView):
             "steam-login": "Initiates the Steam OpenID login process",
             "steam-logout": "Logs the user out of the application",
             "user-games": "Fetches the logged-in user's Steam library",
+            "user-favorites": "Fetches the user's favorite games",
             "get-recs": "Gets game recommendations based on the user's library",
             "check-auth": "Checks if the user is authenticated",
             "csrf": "Gets a CSRF token for form submissions",
@@ -217,6 +224,12 @@ class CheckAuthView(APIView):
         return JsonResponse({"isAuthenticated": False, "username": None})
 
 
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 @method_decorator(cache_page(60 * 15), name="get")
 class UserGamesView(APIView):
     """
@@ -224,6 +237,7 @@ class UserGamesView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
 
     def get(self, request):
         """
@@ -248,10 +262,10 @@ class UserGamesView(APIView):
             for game in game_details:
                 game["cover_url"] = game.pop("header_image", "")
 
-            logger.info(
-                f"Successfully retrieved {len(game_details)} games for user {steam_id}"
-            )
-            return Response(game_details)
+            # Apply pagination
+            paginator = self.pagination_class()
+            paginated_games = paginator.paginate_queryset(game_details, request)
+            return paginator.get_paginated_response(paginated_games)
 
         except Exception as e:
             logger.error(f"Error retrieving games: {str(e)}")
@@ -496,21 +510,68 @@ class RecommendGames(APIView):
         """
         steam_id = request.user.steam_id
 
-        # Get user games
         success, result = self._get_user_games(steam_id)
         if not success:
             return result
         owned_game_names = result
 
-        # Request recommendations
+        favourite_games = request.user.favorite_games.all()
+        if favourite_games.exists():
+            owned_game_names += [game.name for game in favourite_games]
+
         success, result = self._request_recommendations(steam_id, owned_game_names)
         if not success:
             return result
         recommendations = result
 
-        # Enrich recommendations with additional details
         recommendations = self._enrich_recommendations(recommendations, steam_id)
 
-        # Return serialized recommendations
         serializer = RecommendationSerializer(recommendations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class FavoriteGameView(viewsets.ModelViewSet):
+    """
+    ViewSet for managing the user's favorite games.
+    """
+
+    serializer_class = FavoriteGameSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = "appid"
+    pagination_class = StandardResultsSetPagination
+
+    def get_queryset(self):
+        """
+        Return only the current user's favorite games.
+        """
+        return self.request.user.favorite_games.all()
+
+    def get_object(self):
+        """
+        Return the specific favorite game for the current user by appid.
+        """
+        appid = self.kwargs.get(self.lookup_field)
+        try:
+            # Add validation
+            if not isinstance(appid, (int, str)) or not str(appid).isdigit():
+                raise ValidationError("Invalid appid format")
+            return FavoriteGame.objects.get(appid=appid, user=self.request.user)
+        except FavoriteGame.DoesNotExist:
+            raise Http404("Favorite game not found")
+
+    def create(self, request, *args, **kwargs):
+        """
+        Add a game to the user's favorites.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(user=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Remove a game from the user's favorites.
+        """
+        favorite_game = self.get_object()
+        favorite_game.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

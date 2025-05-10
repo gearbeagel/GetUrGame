@@ -5,6 +5,7 @@ import Homepage from "./components/Homepage";
 import SteamCallback from "./components/SteamCallback";
 import GamesPage from "./components/UserGames";
 import RecommendationsPage from "./components/GetRecs";
+import FavoritesPage from "./components/Favorites";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -56,6 +57,10 @@ function App() {
         <Route
           path="/get-recs"
           element={<RecommendationsPage/>}
+        />
+        <Route
+          path="/favorites"
+          element={<FavoritesPage/>}
         />
       </Routes>
     </Router>

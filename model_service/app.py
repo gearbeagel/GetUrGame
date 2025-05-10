@@ -101,7 +101,7 @@ def create_user_profile(valid_games):
 
 
 def find_candidate_games(
-    user_profile, owned_games, user_recent_games, candidate_pool_size=50
+    user_profile, owned_games, user_recent_games, candidate_pool_size=1000
 ):
     """
     Find candidate games for recommendation by processing in batches.

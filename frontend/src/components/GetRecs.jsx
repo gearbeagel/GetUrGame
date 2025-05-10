@@ -5,11 +5,15 @@ import GameBox from "../components/GameBox";
 import axios from "axios";
 import { getCsrfToken, handleSteamLogout } from "../misc/Api";
 import { FaSpinner } from "react-icons/fa";
+import AppHeader from "./AppHeader";
+
+const apiUrl = import.meta.env.VITE_API_URL
 
 export default function RecommendationsPage() {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [favoritedGames, setFavoritedGames] = useState(new Set());
 
   const getRandomColor = () => {
     const colors = ["blue", "purple", "green", "pink"];
@@ -24,7 +28,7 @@ export default function RecommendationsPage() {
       console.log("CSRF Token being sent:", csrfToken);
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/get-recs/",
+        `${apiUrl}/get-recs/`,
         {},
         {
           withCredentials: true,
@@ -43,28 +47,74 @@ export default function RecommendationsPage() {
     }
   };
 
+  const checkFavoriteStatus = async (appid) => {
+    try {
+      const response = await axios.get(
+        `${apiUrl}/user/favorites/${appid}/`,
+        { withCredentials: true }
+      );
+      return true;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        return false;
+      }
+      throw error;
+    }
+  };
+
+  const handleFavorite = async (game) => {
+    try {
+      const csrfToken = await getCsrfToken();
+      await axios.post(
+        `${apiUrl}/user/favorites/`,
+        {
+          appid: game.appid,
+          name: game.name,
+          header_image: game.header_image,
+          short_description: game.short_description
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setFavoritedGames(prev => new Set([...prev, game.appid]));
+    } catch (error) {
+      console.error("Error adding favorite:", error);
+      alert("Failed to add to favorites");
+    }
+  };
+
+  const handleUnfavorite = async (game) => {
+    try {
+      const csrfToken = await getCsrfToken();
+      await axios.delete(
+        `${apiUrl}/user/favorites/${game.appid}/`,
+        {
+          withCredentials: true,
+          headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      setFavoritedGames(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(game.appid);
+        return newSet;
+      });
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+      alert("Failed to remove from favorites");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-black text-white">
-      <header className="bg-black py-4 px-8 flex justify-between items-center">
-        <Link to="/">
-          <h1 className="text-3xl font-bold animate-pulse">
-            <span className="text-blue-500">get</span>{" "}
-            <span className="text-pink-500">ur</span>{" "}
-            <span className="text-green-500">game!!!</span>
-          </h1>
-        </Link>
-        <nav className="flex space-x-4">
-          <Link to="/">
-            <NeonButton color="blue">Home</NeonButton>
-          </Link>
-          <Link to="/games">
-            <NeonButton color="pink">Your Games</NeonButton>
-          </Link>
-          <NeonButton color="purple" onClick={handleSteamLogout}>
-            Logout
-          </NeonButton>
-        </nav>
-      </header>
+      <AppHeader />
       <main className="p-8">
         <h2 className="text-4xl font-bold mb-10 text-center">
           Recommended Games
@@ -74,24 +124,30 @@ export default function RecommendationsPage() {
             Get Recommendations
           </NeonButton>
         </div>
-        {loading && (
-          <div className="text-center">
-            <FaSpinner
-              className={`animate-spin text-${getRandomColor()}-500 text-4xl mx-auto`}
-            />
-          </div>
-        )}
-        {error && <div className="text-red-500 text-center">{error}</div>}
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {recommendations.map((game, index) => (
-            <GameBox
-              key={game.appid}
-              game={game}
-              appid={game.appid}
-              cover={game.header_image}
-              index={index}
-            />
-          ))}
+        <div className="relative min-h-[200px]">
+          {loading ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <FaSpinner
+                className={`animate-spin text-${getRandomColor()}-500 text-4xl`}
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {recommendations.map((game, index) => (
+                <GameBox
+                  key={game.appid}
+                  game={game}
+                  appid={game.appid}
+                  cover={game.header_image}
+                  index={index}
+                  isRecommendation={true}
+                  onFavorite={() => handleFavorite(game)}
+                  onUnfavorite={() => handleUnfavorite(game)}
+                  isFavorited={favoritedGames.has(game.appid)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>

@@ -1,8 +1,12 @@
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+
+
+const apiUrl = import.meta.env.VITE_API_URL; // Ensure this is set in your .env file
 
 export const getCsrfToken = async () => {
   try {
-    const response = await axios.get("http://127.0.0.1:8000/api/csrf/", {
+    const response = await axios.get(`${apiUrl}/csrf/`, {
       withCredentials: true, // Ensure cookies are included
     });
     const csrfToken = response.data.csrfToken;
@@ -18,7 +22,7 @@ export const handleSteamLogout = async () => {
     try {
 
       const response = await axios.get(
-        "http://127.0.0.1:8000/api/steam/logout/",
+        `${apiUrl}/steam/logout/`,
         {
           withCredentials: true,
           headers: {
@@ -28,8 +32,8 @@ export const handleSteamLogout = async () => {
       );
 
       if (response.status === 200) {
-        console.log("Logout successful!")
-        navigate(`/`);
+        console.log("Logout successful!");
+        window.location.href = "/";
         window.location.reload();
       } else {
         console.error("Logout failed:", response.statusText);

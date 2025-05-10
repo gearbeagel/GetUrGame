@@ -3,7 +3,7 @@ FROM python:3.12-slim
 ENV PYTHONUNBUFFERED=1
 ENV POETRY_VIRTUALENVS_CREATE=false
 
-WORKDIR /app
+WORKDIR /app-backend
 
 RUN python -m venv /py && \
     apt-get update && apt-get install -y --no-install-recommends \
@@ -20,11 +20,11 @@ RUN python -m venv /py && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml poetry.lock .flake8 /app/
+COPY pyproject.toml poetry.lock .flake8 /app-backend/
 
 RUN poetry install --no-root
 
-WORKDIR /app/backend
+WORKDIR /app-backend
 
 EXPOSE 8000
 
