@@ -53,9 +53,7 @@ class MainView(APIView):
             "steam-login": request.build_absolute_uri(reverse("steam-login")),
             "steam-logout": request.build_absolute_uri(reverse("steam-logout")),
             "user-games": request.build_absolute_uri(reverse("user-games")),
-            "user-favorites": request.build_absolute_uri(
-                reverse("user-favorite-games")
-            ),
+            "user-favorites": request.build_absolute_uri(reverse("user-favorite-games")),
             "get-recs": request.build_absolute_uri(reverse("get-recs")),
             "check-auth": request.build_absolute_uri(reverse("check-auth")),
             "csrf": request.build_absolute_uri(reverse("csrf")),
@@ -262,7 +260,6 @@ class UserGamesView(APIView):
             for game in game_details:
                 game["cover_url"] = game.pop("header_image", "")
 
-            # Apply pagination
             paginator = self.pagination_class()
             paginated_games = paginator.paginate_queryset(game_details, request)
             return paginator.get_paginated_response(paginated_games)
@@ -294,9 +291,7 @@ def get_steam_game_details(appid):
         if store_response.status_code == 200:
             store_data = store_response.json().get(str(appid), {}).get("data", {})
             return {
-                "short_description": store_data.get(
-                    "short_description", "No description available"
-                ),
+                "short_description": store_data.get("short_description", "No description available"),
                 "header_image": store_data.get(
                     "header_image",
                     f"https://steamcdn-a.akamaihd.net/steam/apps/{appid}/header.jpg",
@@ -339,10 +334,7 @@ def get_user_games_data(steam_id, include_details=False):
             user_games_data = response.json().get("response", {}).get("games", [])
 
             if not include_details:
-                return [
-                    {"name": game["name"], "appid": game["appid"]}
-                    for game in user_games_data
-                ]
+                return [{"name": game["name"], "appid": game["appid"]} for game in user_games_data]
 
             # Include details if requested
             result = []
@@ -357,9 +349,7 @@ def get_user_games_data(steam_id, include_details=False):
 
             return result
 
-        logger.warning(
-            f"Failed to fetch games for user {steam_id}: Status code {response.status_code}"
-        )
+        logger.warning(f"Failed to fetch games for user {steam_id}: Status code {response.status_code}")
     except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching games for user {steam_id}: {str(e)}")
 
@@ -392,9 +382,7 @@ class RecommendGames(APIView):
         user_games = get_user_games_data(steam_id)
 
         if not user_games:
-            logger.warning(
-                f"No games found for user {steam_id} to generate recommendations"
-            )
+            logger.warning(f"No games found for user {steam_id} to generate recommendations")
             return False, Response(
                 {"error": "No games found in your Steam library for recommendations"},
                 status=status.HTTP_404_NOT_FOUND,
@@ -417,21 +405,13 @@ class RecommendGames(APIView):
                 - If success is False, response_or_recommendations is a Response object with an error
         """
         try:
-            logger.info(
-                f"Requesting recommendations for user {steam_id} with {len(owned_game_names)} games"
-            )
-            response = requests.post(
-                FASTAPI_URL, json={"game_names": owned_game_names}, timeout=30
-            )
+            logger.info(f"Requesting recommendations for user {steam_id} with {len(owned_game_names)} games")
+            response = requests.post(FASTAPI_URL, json={"game_names": owned_game_names}, timeout=30)
 
             if response.status_code != 200:
-                logger.error(
-                    f"FastAPI returned non-200 status code: {response.status_code}"
-                )
+                logger.error(f"FastAPI returned non-200 status code: {response.status_code}")
                 return False, Response(
-                    {
-                        "error": f"Recommendation service returned status code {response.status_code}"
-                    },
+                    {"error": f"Recommendation service returned status code {response.status_code}"},
                     status=status.HTTP_502_BAD_GATEWAY,
                 )
 
@@ -460,9 +440,7 @@ class RecommendGames(APIView):
                 status=status.HTTP_504_GATEWAY_TIMEOUT,
             )
         except requests.exceptions.ConnectionError:
-            logger.error(
-                f"Connection error while requesting recommendations from {FASTAPI_URL}"
-            )
+            logger.error(f"Connection error while requesting recommendations from {FASTAPI_URL}")
             return False, Response(
                 {"error": "Could not connect to recommendation service"},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -492,9 +470,7 @@ class RecommendGames(APIView):
                     details = get_steam_game_details(appid)
                     game.update(details)
 
-        logger.info(
-            f"Successfully retrieved {len(recommendations)} recommendations for user {steam_id}"
-        )
+        logger.info(f"Successfully retrieved {len(recommendations)} recommendations for user {steam_id}")
         return recommendations
 
     @method_decorator(ensure_csrf_cookie)
@@ -552,7 +528,6 @@ class FavoriteGameView(viewsets.ModelViewSet):
         """
         appid = self.kwargs.get(self.lookup_field)
         try:
-            # Add validation
             if not isinstance(appid, (int, str)) or not str(appid).isdigit():
                 raise ValidationError("Invalid appid format")
             return FavoriteGame.objects.get(appid=appid, user=self.request.user)

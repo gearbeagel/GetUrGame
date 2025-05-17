@@ -2,7 +2,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-# Create your models here.
 class CustomUser(AbstractUser):
     steam_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
 
@@ -11,9 +10,7 @@ class CustomUser(AbstractUser):
 
 
 class FavoriteGame(models.Model):
-    user = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name="favorite_games"
-    )
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="favorite_games")
     appid = models.IntegerField(unique=True)
     name = models.CharField(max_length=255)
     short_description = models.TextField()

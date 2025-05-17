@@ -63,13 +63,16 @@ const Homepage = ({ isAuthenticated, username }) => {
           </NeonButton>
         ) : (
           <>
-            <NeonButton color="green" href="/games">
+            <NeonButton color="pink" href="/games">
               Look Through Your Games
             </NeonButton>
-            <NeonButton color="pink" href="/get-recs">
+            <NeonButton color="green" href="/get-recs">
               Get Recommendations
             </NeonButton>
-            <NeonButton color="purple" onClick={handleSteamLogout}>
+            <NeonButton color="purple" href="/favorites">
+              Your Favorites
+            </NeonButton>
+            <NeonButton color="blue" onClick={handleSteamLogout}>
               Logout
             </NeonButton>
           </>

@@ -2,12 +2,12 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 
-const apiUrl = import.meta.env.VITE_API_URL; // Ensure this is set in your .env file
+const apiUrl = import.meta.env.VITE_API_URL;
 
 export const getCsrfToken = async () => {
   try {
     const response = await axios.get(`${apiUrl}/csrf/`, {
-      withCredentials: true, // Ensure cookies are included
+      withCredentials: true,
     });
     const csrfToken = response.data.csrfToken;
     console.log("CSRF Token fetched:", csrfToken);
