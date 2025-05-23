@@ -21,7 +21,7 @@ class FavoriteGameView(viewsets.ModelViewSet):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
-        return self.request.user.favorite_games.all()
+        return self.request.user.favorite_games.all().order_by("id")
 
     def get_object(self):
         appid = self.kwargs.get(self.lookup_field)

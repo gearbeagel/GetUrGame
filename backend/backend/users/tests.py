@@ -66,3 +66,53 @@ def test_check_auth_view(api_client, user, mocker):
     assert response.status_code == 200
     assert response.json()["isAuthenticated"] is True
     assert response.json()["username"] == "testuser"
+
+
+@pytest.mark.django_db
+def test_steam_callback_missing_parameters(api_client):
+    callback_url = reverse("steam-callback")
+    response = api_client.get(callback_url, {})
+    assert response.status_code == 400
+
+
+@pytest.mark.django_db
+def test_steam_logout_without_login(api_client):
+    url = reverse("steam-logout")
+    response = api_client.get(url)
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_steam_login_redirect_format(api_client):
+    url = reverse("steam-login")
+    response = api_client.get(url, {"source": "frontend"})
+    redirect_url = response.data.get("redirect_url", "")
+    assert redirect_url.startswith("https://steamcommunity.com/openid/login?")
+    assert "openid.return_to" in redirect_url
+    assert "openid.realm" in redirect_url
+
+
+@pytest.mark.django_db
+def test_steam_callback_existing_user(mocker, api_client):
+    steam_id = "76561198000000001"
+    User.objects.create_user(username="existinguser", password="pass", steam_id=steam_id)
+
+    mocker.patch("users.views.get_steam_username", return_value="existinguser")
+
+    callback_url = reverse("steam-callback")
+    openid_identity = f"https://steamcommunity.com/openid/id/{steam_id}"
+
+    params = {
+        "openid.identity": openid_identity,
+        "openid.claimed_id": openid_identity,
+        "openid.mode": "id_res",
+        "openid.ns": "http://specs.openid.net/auth/2.0",
+        "openid.return_to": "http://testserver/api/steam/callback",
+    }
+
+    response = api_client.get(callback_url, params)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["steam_id"] == steam_id
+    assert data["username"] == "existinguser"

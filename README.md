@@ -91,6 +91,26 @@ Data flows through the system as follows:
 
 ---
 
+## User Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend as React Frontend
+    participant Backend as Django Backend
+    participant ML as ML Model Service
+
+    User->>Frontend: Open app / Login / Click actions
+    Frontend->>Backend: API requests (login, games, favorites, recs)
+    Backend-->>Frontend: API responses (user data, games, favorites, recs)
+    Backend->>ML: (For recommendations) Send user/game data
+    ML-->>Backend: Return recommendations
+    Backend-->>Frontend: Return recommendations
+    Frontend-->>User: Show UI (games, favorites, recommendations)
+```
+The user flow diagram illustrates the interaction between the user, frontend, backend, and ML model service. The user interacts with the React frontend, which sends API requests to the Django backend. The backend processes these requests, communicates with the ML model service for recommendations, and returns the data to the frontend for display.
+---
+
 ## Technologies
 
 ### Backend

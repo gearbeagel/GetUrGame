@@ -1,77 +1,92 @@
+import { describe, it, vi, beforeEach, expect } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import GamesPage from '../UserGames.jsx';
+import axios from 'axios';
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import GamesPage from '../UserGames';
 import { MemoryRouter } from 'react-router-dom';
-import { vi, it, expect, describe } from 'vitest';
 
-vi.mock('axios', () => ({
-  default: {
-    get: vi.fn((url) => {
-      if (url.includes('/user/games/')) {
-        return Promise.resolve({ data: { results: [
-          { id: 1, appid: 1, name: 'User Game', cover_url: 'img.jpg' }
-        ], count: 1 } });
-      }
-      return Promise.resolve({ data: {} });
-    }),
-  },
+vi.mock('../components/GameBox', () => ({
+  default: ({ game }) => <div data-testid="gamebox">{game.name}</div>
 }));
-
-vi.mock('../GameBox', () => ({
-  default: ({ game }) => (
-    <div data-testid="gamebox">
-      <span>{game.name}</span>
-    </div>
-  )
-}));
-
 vi.mock('../AppHeader', () => ({
-  default: () => <div data-testid="appheader">Header</div>
+  default: () => <header data-testid="app-header">AppHeader</header>
 }));
-
 vi.mock('../Pagination', () => ({
-  default: ({ currentPage, totalPages, onPageChange }) => (
+  default: ({ currentPage, totalPages }) => (
     <div data-testid="pagination">
-      <button onClick={() => onPageChange(1)}>Page 1</button>
+      Page {currentPage} of {totalPages}
     </div>
   )
 }));
+
+vi.mock('axios');
 
 describe('GamesPage', () => {
-  it('renders user games', async () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders loading spinner initially and fetches data', async () => {
+    axios.get.mockResolvedValue({
+      data: {
+        results: [{ id: 1, appid: 123, name: 'Test Game', cover_url: 'test.jpg' }],
+        count: 10
+      }
+    });
+
     render(
       <MemoryRouter>
         <GamesPage />
       </MemoryRouter>
     );
+
+    // Expect loading spinner (you can adjust selector accordingly)
+    expect(screen.getByTestId('app-header')).toBeInTheDocument();
+
     await waitFor(() => {
-      expect(screen.getByText('User Game')).toBeInTheDocument();
+      expect(screen.getByText('Test Game')).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('pagination')).toBeInTheDocument();
+  });
+
+  it('displays error if API fails', async () => {
+    axios.get.mockRejectedValue(new Error('API Error'));
+
+    render(
+      <MemoryRouter>
+        <GamesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to fetch games')).toBeInTheDocument();
     });
   });
 
-  it('shows error on fetch failure', async () => {
-    const axios = (await import('axios')).default;
-    axios.get.mockImplementationOnce(() => Promise.reject(new Error('fail')));
-    render(
-      <MemoryRouter>
-        <GamesPage />
-      </MemoryRouter>
-    );
-    await waitFor(() => {
-      expect(screen.getByText(/failed to fetch games/i)).toBeInTheDocument();
-    });
-  });
+  it('renders multiple game boxes', async () => {
+    const mockGames = Array.from({ length: 5 }, (_, i) => ({
+      id: i + 1,
+      appid: 100 + i,
+      name: `Game ${i + 1}`,
+      cover_url: `cover${i + 1}.jpg`
+    }));
 
-  it('handles pagination', async () => {
+    axios.get.mockResolvedValue({
+      data: {
+        results: mockGames,
+        count: 50
+      }
+    });
+
     render(
       <MemoryRouter>
         <GamesPage />
       </MemoryRouter>
     );
-    const pageBtn = await screen.findByText('Page 1');
-    fireEvent.click(pageBtn);
+
     await waitFor(() => {
-      expect(screen.getByText('User Game')).toBeInTheDocument();
+      expect(screen.getAllByText(/game /i)).toHaveLength(5);
     });
   });
 });

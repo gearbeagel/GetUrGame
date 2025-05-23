@@ -45,6 +45,8 @@ class Dev(Configuration):
     CSRF_COOKIE_SAMESITE = "None"
     CSRF_COOKIE_HTTPONLY = False
 
+    FORMS_URLFIELD_ASSUME_HTTPS = True
+
     class DisableMigrations:
         def __contains__(self, item):
             return True

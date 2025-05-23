@@ -60,7 +60,7 @@ export default function GamesPage() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-              {gameData.map((game, index) => (
+              {(gameData || []).map((game, index) => (
                 <GameBox
                   key={game.id}
                   game={game}

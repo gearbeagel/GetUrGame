@@ -76,3 +76,34 @@ def test_list_favorite_games_empty(api_client, user):
     response = api_client.get(url)
     assert response.status_code == 200
     assert response.data["results"] == []
+
+
+@pytest.mark.django_db
+def test_create_favorite_game_invalid_data(api_client, user):
+    api_client.force_authenticate(user=user)
+    url = reverse("user-favorite-games-list")
+    data = {
+        "appid": "",
+        "name": "",
+        "header_image": "",
+        "short_description": "",
+    }
+    response = api_client.post(url, data, format="json")
+    assert response.status_code == 400
+    assert "appid" in response.data
+
+
+@pytest.mark.django_db
+def test_create_favorite_game_already_exists(api_client, user):
+    api_client.force_authenticate(user=user)
+    url = reverse("user-favorite-games-list")
+    data = {
+        "appid": 123,
+        "name": "Fav Game",
+        "header_image": "http://example.com/image.jpg",
+        "short_description": "A great game",
+    }
+    api_client.post(url, data, format="json")
+    response = api_client.post(url, data, format="json")
+    assert response.status_code == 400
+    assert "appid" in response.data

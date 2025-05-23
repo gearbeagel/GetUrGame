@@ -49,3 +49,26 @@ def test_get_recommendations(api_client, user, mocker):
     response = api_client.post(url)
     assert response.status_code == 200
     assert any(r["name"] == "Rec Game" for r in response.data)
+
+
+@pytest.mark.django_db
+def test_get_recommendations_no_games(api_client, user, mocker):
+    mocker.patch("games.views.get_user_games_data", return_value=[])
+    api_client.force_authenticate(user=user)
+    url = reverse("get-recs")
+    response = api_client.post(url)
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_get_recommendations_no_recommendations(api_client, user, mocker):
+    mocker.patch("games.views.get_user_games_data", return_value=[{"name": "Game 1", "appid": 1}])
+    mocker.patch(
+        "requests.post",
+        return_value=mocker.Mock(status_code=200, json=lambda: {"recommendations": []}),
+    )
+    api_client.force_authenticate(user=user)
+    url = reverse("get-recs")
+    response = api_client.post(url)
+    assert response.status_code == 200
+    assert response.data == []

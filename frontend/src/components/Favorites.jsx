@@ -80,10 +80,10 @@ export default function FavoritesPage() {
         {error && <p className="text-red-500">{error}</p>}
         {loading ? (
           <div className="text-center">
-            <FaSpinner className={`animate-spin text-${getRandomColor()}-500 text-4xl mx-auto`} />
+            <FaSpinner data-testid="loading-spinner" className={`animate-spin text-${getRandomColor()}-500 text-4xl mx-auto`} />
           </div>
-        ) : favorites.length === 0 ? (
-          <div className="text-center text-white text-xl mt-8">No favourites found.</div>
+        ) : !favorites ? (
+          <div className="text-center text-gray-400 text-xl mt-8">No favourites found.</div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">

@@ -1,87 +1,120 @@
+import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import FavoritesPage from '../Favorites';
+import axios from 'axios';
 import { MemoryRouter } from 'react-router-dom';
-import { vi, expect, describe, it } from 'vitest';
-import React from 'react';
+import { vi, expect, it, describe } from 'vitest';
 
-vi.mock('axios', () => ({
-  default: {
-    get: vi.fn((url) => {
-      if (url.includes('/user/favorites/')) {
-        return Promise.resolve({ data: { results: [
-          { appid: 1, name: 'Fav Game', header_image: 'img.jpg' }
-        ], count: 1 } });
-      }
-      return Promise.resolve({ data: {} });
-    }),
-    delete: vi.fn(() => Promise.resolve()),
-  },
-}));
-
-vi.mock('../GameBox', () => ({
+vi.mock('axios');
+vi.mock('../components/GameBox', () => ({
   default: ({ game, onUnfavorite }) => (
     <div data-testid="gamebox">
-      <span>{game.name}</span>
+      {game.name}
       <button onClick={onUnfavorite}>Unfavorite</button>
     </div>
-  )
+  ),
 }));
 
 vi.mock('../AppHeader', () => ({
-  default: () => <div data-testid="appheader">Header</div>
+  default: () => <header data-testid="app-header">AppHeader</header>,
 }));
 
 vi.mock('../Pagination', () => ({
   default: ({ currentPage, totalPages, onPageChange }) => (
     <div data-testid="pagination">
-      <button onClick={() => onPageChange(1)}>Page 1</button>
+      <button onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>
+        Prev
+      </button>
+      <span>
+        {currentPage} / {totalPages}
+      </span>
+      <button onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+        Next
+      </button>
     </div>
-  )
+  ),
 }));
 
-vi.mock('../../utils/Api', () => ({
-  getCsrfToken: vi.fn(() => Promise.resolve('dummy-csrf-token')),
-  handleSteamLogout: vi.fn(),
+
+vi.mock('../utils/Api', () => ({
+  getCsrfToken: vi.fn().mockResolvedValue('fake-csrf-token'),
 }));
 
 describe('FavoritesPage', () => {
-  it('renders favorite games', async () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders loading spinner initially and then favorites', async () => {
+    axios.get.mockResolvedValueOnce({
+      data: {
+        results: [
+          { appid: 1, name: 'Game 1', header_image: 'img1.jpg' },
+          { appid: 2, name: 'Game 2', header_image: 'img2.jpg' },
+        ],
+        count: 20,
+      },
+    });
+
     render(
       <MemoryRouter>
         <FavoritesPage />
       </MemoryRouter>
     );
+
+    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+
     await waitFor(() => {
-      expect(screen.getByText('Fav Game')).toBeInTheDocument();
+      expect(screen.getByText('Game 1')).toBeInTheDocument();
+      expect(screen.getByText('Game 2')).toBeInTheDocument();
+    });
+
+    expect(screen.getByTestId('pagination')).toHaveTextContent('1 / 2');
+  });
+
+  it('shows error message when API fails', async () => {
+    axios.get.mockRejectedValueOnce(new Error('API Error'));
+
+    render(
+      <MemoryRouter>
+        <FavoritesPage />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Failed to fetch favorites')).toBeInTheDocument();
     });
   });
 
-  it('handles unfavorite', async () => {
-    render(
-      <MemoryRouter>
-        <FavoritesPage />
-      </MemoryRouter>
-    );
-    await waitFor(() => {
-      expect(screen.getByText('Fav Game')).toBeInTheDocument();
+  it('changes pages when pagination buttons are clicked', async () => {
+    axios.get.mockResolvedValueOnce({
+      data: {
+        results: [{ appid: 1, name: 'Game 1', header_image: 'img1.jpg' }],
+        count: 20,
+      },
     });
-    const unfavBtn = screen.getByText('Unfavorite');
-    fireEvent.click(unfavBtn);
-    await waitFor(() => {
-      expect(screen.getByText('Fav Game')).toBeInTheDocument();
-    });
-  });
 
-  it('shows error on fetch failure', async () => {
-    const axios = (await import('axios')).default;
-    axios.get.mockImplementationOnce(() => Promise.reject(new Error('fail')));
+    axios.get.mockResolvedValueOnce({
+      data: {
+        results: [{ appid: 2, name: 'Game 2', header_image: 'img2.jpg' }],
+        count: 20,
+      },
+    });
+
     render(
       <MemoryRouter>
         <FavoritesPage />
       </MemoryRouter>
     );
+
     await waitFor(() => {
-      expect(screen.getByText(/failed to fetch favorites/i)).toBeInTheDocument();
+      expect(screen.getByText('Game 1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('Next'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Game 2')).toBeInTheDocument();
     });
   });
 });

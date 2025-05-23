@@ -34,7 +34,7 @@ class MainView(APIView):
             "steam-login": request.build_absolute_uri(reverse("steam-login")),
             "steam-logout": request.build_absolute_uri(reverse("steam-logout")),
             "user-games": request.build_absolute_uri(reverse("user-games")),
-            "user-favorites": request.build_absolute_uri(reverse("user-favorite-games")),
+            "user-favorites": request.build_absolute_uri(reverse("user-favorite-games-list")),
             "get-recs": request.build_absolute_uri(reverse("get-recs")),
             "check-auth": request.build_absolute_uri(reverse("check-auth")),
             "csrf": request.build_absolute_uri(reverse("csrf")),

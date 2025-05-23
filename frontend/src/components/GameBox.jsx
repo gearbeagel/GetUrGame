@@ -73,9 +73,9 @@ const GameBox = ({
           </NeonButton>
           {(isRecommendation || isFavorited) && (
             <button
-              onClick={handleFavoriteClick}
-              className="text-red-500 hover:text-red-700 transition-colors duration-300"
-              aria-label={`${isFavorited ? 'Remove' : 'Add'} ${game.name} to favorites`}
+                onClick={handleFavoriteClick}
+                className="text-red-500 hover:text-red-700 transition-colors duration-300"
+                aria-label={isFavorited ? "Unfavourite" : "Favourite"}
             >
               {isFavorited ? <FaHeart size={24} /> : <FaRegHeart size={24} />}
             </button>
