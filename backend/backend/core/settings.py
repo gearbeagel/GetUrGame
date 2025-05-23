@@ -45,6 +45,15 @@ class Dev(Configuration):
     CSRF_COOKIE_SAMESITE = "None"
     CSRF_COOKIE_HTTPONLY = False
 
+    class DisableMigrations:
+        def __contains__(self, item):
+            return True
+
+        def __getitem__(self, item):
+            return None
+
+    MIGRATION_MODULES = DisableMigrations()
+
     INSTALLED_APPS = [
         "corsheaders",
         "django.contrib.admin",
@@ -59,7 +68,10 @@ class Dev(Configuration):
         "allauth.socialaccount",
         "allauth.socialaccount.providers.steam",
         "allauth.socialaccount.providers.openid",
-        "main.apps.MainConfig",
+        "main",
+        "users",
+        "games",
+        "favourites",
         "pytest",
     ]
 
@@ -110,7 +122,7 @@ class Dev(Configuration):
         },
     ]
 
-    AUTH_USER_MODEL = "main.CustomUser"
+    AUTH_USER_MODEL = "users.CustomUser"
 
     AUTHENTICATION_BACKENDS = [
         "allauth.account.auth_backends.AuthenticationBackend",

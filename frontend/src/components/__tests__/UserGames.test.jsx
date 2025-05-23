@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import GamesPage from '../UserGames';
 import { MemoryRouter } from 'react-router-dom';
-import { vi } from 'vitest';
+import { vi, it, expect, describe } from 'vitest';
 
 vi.mock('axios', () => ({
   default: {

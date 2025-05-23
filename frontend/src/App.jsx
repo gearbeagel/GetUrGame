@@ -6,6 +6,7 @@ import SteamCallback from "./components/SteamCallback";
 import GamesPage from "./components/UserGames";
 import RecommendationsPage from "./components/GetRecs";
 import FavoritesPage from "./components/Favorites";
+import {apiUrl} from "./utils/Api.jsx";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -14,7 +15,7 @@ function App() {
   useEffect(() => {
     const checkAuthFromBackend = async () => {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/misc/check-auth/", {
+        const response = await axios.get(`${apiUrl}/user/misc/check-auth/`, {
           withCredentials: true,
         });
 

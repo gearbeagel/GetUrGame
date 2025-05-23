@@ -6,7 +6,7 @@ export const apiUrl = import.meta.env.VITE_API_URL;
 
 export const getCsrfToken = async () => {
   try {
-    const response = await axios.get(`${apiUrl}/csrf/`, {
+    const response = await axios.get(`${apiUrl}/user/csrf/`, {
       withCredentials: true,
     });
     const csrfToken = response.data.csrfToken;
@@ -22,7 +22,7 @@ export const handleSteamLogout = async () => {
     try {
 
       const response = await axios.get(
-        `${apiUrl}/steam/logout/`,
+        `${apiUrl}/user/steam/logout/`,
         {
           withCredentials: true,
           headers: {

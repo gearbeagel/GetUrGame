@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FaSpinner } from "react-icons/fa";
+import { apiUrl } from "../utils/Api";
 
 const SteamCallback = ({ setIsAuthenticated, setUsername }) => {
   const [loading, setLoading] = useState(true);
@@ -17,7 +18,7 @@ const SteamCallback = ({ setIsAuthenticated, setUsername }) => {
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const response = await axios.get(
-          `http://127.0.0.1:8000/api/steam/callback/?${urlParams.toString()}`,
+          `${apiUrl}/user/steam/callback/?${urlParams.toString()}`,
           {
             withCredentials: true,
           }

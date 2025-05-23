@@ -20,7 +20,8 @@ services:
         - STEAM_API_KEY=${STEAM_API_KEY}
         - VITE_API_URL=${VITE_API_URL}
         - FASTAPI_URL=${FASTAPI_URL}
-    command: ["python", "backend/manage.py", "runserver", "0.0.0.0:8000"]
+    command: >
+      sh -c "python backend/manage.py runserver 0.0.0.0:8000"
 
   gyg-frontend:
     build:

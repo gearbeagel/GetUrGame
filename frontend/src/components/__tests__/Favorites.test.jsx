@@ -1,7 +1,7 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import FavoritesPage from '../Favorites';
 import { MemoryRouter } from 'react-router-dom';
-import { vi } from 'vitest';
+import { vi, expect, describe, it } from 'vitest';
 import React from 'react';
 
 vi.mock('axios', () => ({

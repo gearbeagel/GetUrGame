@@ -28,7 +28,7 @@ export default function RecommendationsPage() {
       console.log("CSRF Token being sent:", csrfToken);
 
       const response = await axios.post(
-        `${apiUrl}/get-recs/`,
+        `${apiUrl}/games/recommend/`,
         {},
         {
           withCredentials: true,

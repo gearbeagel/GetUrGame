@@ -25,7 +25,7 @@ export default function GamesPage() {
     setError(null);
     try {
       const response = await axios.get(
-        `${apiUrl}/user/games/?page=${page}`,
+        `${apiUrl}/games/?page=${page}`,
         { withCredentials: true }
       );
       setGameData(response.data.results);

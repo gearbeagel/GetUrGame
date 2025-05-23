@@ -18,7 +18,7 @@ const Homepage = ({ isAuthenticated, username }) => {
   const handleSteamLogin = async () => {
     try {
       const response = await axios.get(
-        `${apiUrl}steam/login/?source=frontend`,
+        `${apiUrl}/user/steam/login/?source=frontend`,
         {
           withCredentials: true,
         }

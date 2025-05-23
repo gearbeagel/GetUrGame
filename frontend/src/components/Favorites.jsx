@@ -26,7 +26,7 @@ export default function FavoritesPage() {
     setError(null);
     try {
       const response = await axios.get(
-        `${apiUrl}/user/favorites/?page=${page}`,
+        `${apiUrl}/favourites/?page=${page}`,
         { withCredentials: true }
       );
       setFavorites(response.data.results);
@@ -82,6 +82,8 @@ export default function FavoritesPage() {
           <div className="text-center">
             <FaSpinner className={`animate-spin text-${getRandomColor()}-500 text-4xl mx-auto`} />
           </div>
+        ) : favorites.length === 0 ? (
+          <div className="text-center text-white text-xl mt-8">No favourites found.</div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
