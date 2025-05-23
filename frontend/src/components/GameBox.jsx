@@ -1,4 +1,4 @@
-import React from "react";
+import React from "react"; // noqa
 import NeonButton from "./NeonButton";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 

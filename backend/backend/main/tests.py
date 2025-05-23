@@ -15,9 +15,7 @@ def api_client():
 
 @pytest.fixture
 def user():
-    return User.objects.create_user(
-        username="testuser", password="testpass", steam_id="123456789"
-    )
+    return User.objects.create_user(username="testuser", password="testpass", steam_id="123456789")
 
 
 @pytest.mark.django_db
@@ -59,9 +57,7 @@ def test_steam_logout_view(api_client, user):
 @pytest.mark.django_db
 def test_steam_callback_view(api_client, mocker):
     mocker.patch("main.views.get_steam_username", return_value="testuser")
-    mocker.patch.dict(
-        os.environ, {"STEAM_IDENTITY_URL": os.getenv("STEAM_IDENTITY_URL")}
-    )
+    mocker.patch.dict(os.environ, {"STEAM_IDENTITY_URL": os.getenv("STEAM_IDENTITY_URL")})
     url = reverse("steam-callback")
     response = api_client.get(url, {"openid.identity": os.getenv("STEAM_IDENTITY_URL")})
     assert response.status_code == 200
@@ -96,3 +92,41 @@ def test_user_games_view(api_client, user, mocker):
     assert response.status_code == 200
     assert len(response.data) == 1
     assert response.data[0]["name"] == "Game 1"
+
+
+@pytest.mark.django_db
+def test_get_recommendations(api_client, user, mocker):
+    mocker.patch("main.views.get_user_games_data", return_value=[{"name": "Game 1", "appid": 1}])
+    mocker.patch(
+        "requests.post",
+        return_value=mocker.Mock(
+            status_code=200, json=lambda: {"recommendations": [{"name": "Rec Game", "appid": 2}]}
+        ),
+    )
+    mocker.patch(
+        "main.views.get_steam_game_details", return_value={"short_description": "desc", "header_image": "url"}
+    )
+    api_client.force_authenticate(user=user)
+    url = reverse("get-recs")
+    response = api_client.post(url)
+    assert response.status_code == 200
+    assert any(r["name"] == "Rec Game" for r in response.data)
+
+
+@pytest.mark.django_db
+def test_favorite_game_crud(api_client, user):
+    api_client.force_authenticate(user=user)
+    url = reverse("user-favorite-games-list")
+
+    data = {"appid": 123, "name": "Fav Game"}
+    response = api_client.post(url, data)
+    assert response.status_code == 201
+    assert response.data["name"] == "Fav Game"
+
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert any(f["appid"] == 123 for f in response.data)
+
+    del_url = reverse("user-favorite-games-detail", args=[123])
+    response = api_client.delete(del_url)
+    assert response.status_code == 204

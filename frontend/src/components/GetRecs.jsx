@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import NeonButton from "../components/NeonButton";
 import GameBox from "../components/GameBox";
 import axios from "axios";
-import { getCsrfToken, handleSteamLogout } from "../misc/Api";
+import { getCsrfToken, handleSteamLogout } from "../utils/Api";
 import { FaSpinner } from "react-icons/fa";
 import AppHeader from "./AppHeader";
 

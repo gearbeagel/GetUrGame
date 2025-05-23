@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import NeonButton from "./NeonButton";
 import { FaSteam } from "react-icons/fa";
 import axios from "axios";
-import { handleSteamLogout } from "../misc/Api";
+import { handleSteamLogout } from "../utils/Api";
 import { FaSpinner } from "react-icons/fa";
+import { apiUrl } from "../utils/Api";
 
 const Homepage = ({ isAuthenticated, username }) => {
   const [loading, setLoading] = useState(false);
@@ -17,7 +18,7 @@ const Homepage = ({ isAuthenticated, username }) => {
   const handleSteamLogin = async () => {
     try {
       const response = await axios.get(
-        "http://127.0.0.1:8000/api/steam/login/?source=frontend",
+        `${apiUrl}steam/login/?source=frontend`,
         {
           withCredentials: true,
         }

@@ -23,6 +23,8 @@ from .serializers import FavoriteGameSerializer, RecommendationSerializer
 from rest_framework.pagination import PageNumberPagination
 from django.core.exceptions import ValidationError
 from django.http import Http404
+from django.views.decorators.http import require_GET
+from django.utils.http import url_has_allowed_host_and_scheme
 
 load_dotenv()
 
@@ -107,6 +109,7 @@ class SteamLoginView(APIView):
     Initiates the Steam OpenID login process.
     """
 
+    @method_decorator(require_GET)
     def get(self, request):
         try:
             is_frontend = request.GET.get("source") == "frontend"
@@ -115,6 +118,9 @@ class SteamLoginView(APIView):
                 if is_frontend
                 else f"{settings.BACKEND_URL}/api/steam/callback"
             )
+            if not url_has_allowed_host_and_scheme(return_to_url, allowed_hosts=settings.ALLOWED_HOSTS):
+                logger.warning(f"Blocked open redirect to: {return_to_url}")
+                return Response({"error": "Invalid redirect URL."}, status=400)
 
             params = {
                 "openid.ns": "http://specs.openid.net/auth/2.0",
@@ -157,28 +163,35 @@ class SteamCallbackView(APIView):
     Handles the Steam OpenID callback and processes the user authentication.
     """
 
+    @method_decorator(require_GET)
     def get(self, request):
         try:
             openid_params = request.GET
             logger.info("Received OpenID params: %s", openid_params)
-
-            steam_id = openid_params["openid.identity"].split("/")[-1]
+            # Validate openid.identity
+            openid_identity = openid_params.get("openid.identity")
+            if not openid_identity or not openid_identity.startswith("https://steamcommunity.com/openid/id/"):
+                logger.warning("Invalid openid.identity: %s", openid_identity)
+                return Response({"error": "Invalid OpenID response."}, status=400)
+            steam_id = openid_identity.split("/")[-1]
+            if not steam_id.isdigit():
+                logger.warning("Non-numeric steam_id in OpenID response: %s", steam_id)
+                return Response({"error": "Invalid Steam ID."}, status=400)
             username = get_steam_username(steam_id)
-
+            if not username:
+                logger.warning("Could not fetch username for steam_id: %s", steam_id)
+                return Response({"error": "Could not fetch Steam username."}, status=400)
             user, created = CustomUser.objects.get_or_create(steam_id=steam_id)
             if created:
                 logger.debug("Created new user: %s", username)
                 user.username = username
                 user.set_unusable_password()
                 user.save()
-
             login(request, user)
             logger.info("User logged in successfully: %s", username)
-
             session_key = request.session.session_key
             logger.debug(f"Session key: {session_key}")
             logger.debug(f"User is authenticated: {request.user.is_authenticated}")
-
             return Response(
                 {
                     "message": "Logged user in successfully",
@@ -186,25 +199,30 @@ class SteamCallbackView(APIView):
                     "username": username,
                 }
             )
-
         except Exception as e:
             logger.error("Error during Steam callback: %s", str(e))
-            return Response({"error": f"An error occurred: {str(e)}"}, status=500)
+            return Response({"error": "An error occurred."}, status=500)
 
 
 def get_steam_username(steam_id):
     api_key = settings.STEAM_API_KEY
+    if not api_key:
+        logger.error("STEAM_API_KEY is not set.")
+        return None
     url = "http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/"
     params = {
         "key": api_key,
         "steamids": steam_id,
     }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        data = response.json()
-        if "response" in data and "players" in data["response"]:
-            player_data = data["response"]["players"][0]
-            return player_data.get("personaname", "No username found")
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            if "response" in data and "players" in data["response"] and data["response"]["players"]:
+                player_data = data["response"]["players"][0]
+                return player_data.get("personaname", "No username found")
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"Failed to fetch Steam username: {str(e)}")
     return None
 
 

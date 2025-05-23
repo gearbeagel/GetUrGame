@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import NeonButton from './NeonButton';
-import { handleSteamLogout } from '../misc/Api';
+import { handleSteamLogout } from '../utils/Api';
 
 const AppHeader = ({ showFavorites = true }) => {
   return (

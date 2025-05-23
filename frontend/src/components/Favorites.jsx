@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { getCsrfToken } from "../misc/Api";
+import { getCsrfToken } from "../utils/Api";
 import GameBox from "./GameBox";
 import axios from "axios";
-import { handleSteamLogout } from "../misc/Api";
+import { handleSteamLogout } from "../utils/Api";
 import { FaSpinner } from "react-icons/fa";
 import AppHeader from "./AppHeader";
 import Pagination from './Pagination';
