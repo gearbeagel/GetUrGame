@@ -108,7 +108,9 @@ sequenceDiagram
     Backend-->>Frontend: Return recommendations
     Frontend-->>User: Show UI (games, favorites, recommendations)
 ```
+
 The user flow diagram illustrates the interaction between the user, frontend, backend, and ML model service. The user interacts with the React frontend, which sends API requests to the Django backend. The backend processes these requests, communicates with the ML model service for recommendations, and returns the data to the frontend for display.
+
 ---
 
 ## Technologies
